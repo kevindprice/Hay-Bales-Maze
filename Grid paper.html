@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset=utf-8 />
-<title>Hay Bales Maze</title>
+<title id="title">Hay Bales Maze       </title>
 <script type="text/javascript">
 //globals
 var INTERVAL = 20;  //line spacing
@@ -28,6 +28,20 @@ function setPage()
     var canvas = document.getElementById("canvas");
     canvas.height = CANVAS_HEIGHT;
     canvas.width = CANVAS_WIDTH;
+    drawGrid()
+}
+
+function animate_string(id)   //animates the title
+{
+    var element = document.getElementById(id);
+    var textNode = element.childNodes[0]; // assuming no other children
+    var text = textNode.data;
+
+    setInterval(function () 
+    {
+        text = text.substring(1, text.length) + text[0];
+        textNode.data = text;
+    }, 175);
 }
 
 function drawGrid() 
@@ -438,7 +452,6 @@ function zoomIn()
         CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
         setPage();
     }
-    drawGrid();
 }
 
 function zoomOut()
@@ -450,16 +463,17 @@ function zoomOut()
         CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
         setPage();
     }
-    drawGrid();
-
 }
+
+
 
 </script>
 </head>
-<body onload="setPage(); drawGrid();">
+<body onload="animate_string('title'); setPage();">
     <input type="submit" value="Start the Maze" onclick="startMaze()"/>
     <input type="submit" value="Zoom In" onclick="zoomIn()"/>
     <input type="submit" value="Zoom Out" onclick="zoomOut()"/>
+    <input type="submit" value="Refresh" onclick="setPage()" />
     </br></br>
     <canvas id="canvas" onclick="clickHandler(event);"></canvas>
 </body>
