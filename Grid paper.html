@@ -44,6 +44,7 @@ function animate_string(id)   //animates the title
     }, 175);
 }
 
+
 function drawGrid() 
 {
     var canvas = document.getElementById("canvas");
@@ -228,7 +229,7 @@ function startMaze()
     var stop = checkObstacles(spot);
 
     //move the line on an interval
-    var interval = setInterval(function() {
+    var time_interval = setInterval(function() {
         context.beginPath();
         context.strokeStyle="#00FF00"; //green
 
@@ -259,6 +260,12 @@ function startMaze()
                 break;
         }
 
+        
+        //draw the line, ALWAYS keeping it in reference to the grids.
+        context.lineTo( Math.round(spot[0]*INTERVAL + INTERVAL/2), 
+                        Math.round(spot[1]*INTERVAL + INTERVAL/2) );  
+        context.stroke();
+
         //Check for the next obstacle
         pixelsSpot = stop["dist"]*INTERVAL;
         pixelsSpot -= MOVEDIST;
@@ -266,23 +273,168 @@ function startMaze()
         
         if (stop["dist"] <= 0)
         {
-            clearInterval(interval);
+            clearInterval(time_interval);
             alert("You hit an obstacle or went off the edge!");
-//            obstacleHandler()
-        }
+//            obstacleHandler(time_interval, spot, stop["obstacle"]);
+        }        
         
-        
-        //draw the line, ALWAYS keeping it in reference to the grids.
-        context.lineTo( Math.round(spot[0]*INTERVAL + INTERVAL/2), 
-                        Math.round(spot[1]*INTERVAL + INTERVAL/2) );  
-        context.stroke();
-
-/*        if (spot[1]<= -.5)             //to be erased
-            { clearInterval(interval);
-              alert("You went off the edge!"); }
-*/        
     }, 30);  //how often in ms the line is moved.
 }
+
+//--------------------------------------------
+
+
+function obstacleHandler(time_interval, spot, stop_obstacle)
+{
+    //just in case the interval is an odd number,
+    //and you didn't land exactly on INTERVAL/2
+    //this will fix that problem. :-)
+    spot[0]=Math.round(spot[0])
+    spot[1]=Math.round(spot[1])
+    while (spot[0] % INTERVAL != 0)
+    {
+        spot[0]--
+    }
+    while (spot[1] % INTERVAL != 0)
+    {
+        spot[1]--
+    }
+
+    var sides = [];  //will be populated with which sides
+                     //of the square have obstacles in them
+
+    for (var i=0; i<obstacles.length; i++)
+    {
+        if(  obstacles[i]["x"] == spot[0] &&
+             obstacles[i]["y"] == spot[1] &&
+             obstacles[i]["orient"] == "vertical" &&
+             !obstacles[i]["type"] == "permeable" )
+            {  sides.push("left");  }
+        
+        if(  obstacles[i]["x"] == spot[0] &&
+             obstacles[i]["y"] == spot[1] &&
+             obstacles[i]["orient"] == "horizontal" &&
+             !obstacles[i]["type"] == "permeable" )
+            {  sides.push("top");  }
+        
+        if(  obstacles[i]["x"] == (spot[0] + 1) &&
+             obstacles[i]["y"] == spot[1] &&
+             obstacles[i]["orient"] == "vertical" &&
+             !obstacles[i]["type"] == "permeable" )
+            {  sides.push("right");  }
+                        
+        if ( obstacles[i]["x"] == spot[0] &&
+             obstacles[i]["y"] == (spot[1] + 1) &&
+             obstacles[i]["orient"] == "horizontal" &&
+             !obstacles[i]["type"] == "permeable" )
+            {  sides.push("bottom");  }
+    }
+
+    var directions = [] //will be populated with the direction 
+                        // choices the user has.
+
+    //now handle the directions based on where you are oriented.
+    switch(spot[2])
+    {
+        case "up":  //we KNOW there is an obstacle on TOP.
+            if( stop_obstacle["type"] == "permeable" )
+            { directions.push("forward") }
+            
+            if( sides.includes("left") &&
+                sides.includes("right") )
+            { directions.push("backward") }
+
+            if( sides.includes("left") &&
+                !sides.includes("right") )
+            { directions.push("right") }
+            
+            if( !sides.includes("left") &&
+                sides.includes("right") )
+            { directions.push("left") }
+            
+            if( !sides.includes("right") &&
+                !sides.includes("left") )
+            { directions.push("right")
+              directions.push("left") }
+            break
+
+        case "down":  //we KNOW there is an obstacle BELOW.
+            if( stop_obstacle["type"] == "permeable" )
+            { directions.push("forward") }
+            
+            if( sides.includes("left") &&
+                sides.includes("right") )
+            { directions.push("backward") }
+
+            if( sides.includes("left") &&
+                !sides.includes("right") )
+            { directions.push("left") } //left and right are swapped
+                                        //when moving down
+            if( !sides.includes("left") &&
+                sides.includes("right") )
+            { directions.push("right") } //left and right are swapped
+                                        //when moving down
+            if( !sides.includes("right") &&
+                !sides.includes("left") )
+            { directions.push("right")
+              directions.push("left") }
+            break;
+
+        case "right": //we KNOW there is an obstacle TO THE RIGHT.
+            if( stop_obstacle["type"] == "permeable" )
+            { directions.push("forward") }
+            
+            if( sides.includes("top") &&
+                sides.includes("bottom") )
+            { directions.push("backward") }
+
+            if( sides.includes("top") &&
+                !sides.includes("bottom") )
+            { directions.push("right") }
+
+            if( !sides.includes("top") &&
+                sides.includes("bottom") )
+            { directions.push("left") }
+
+            if( !sides.includes("top") &&
+                !sides.includes("bottom") )
+            { directions.push("right")
+              directions.push("left") }
+            break;
+
+        case "left": //we KNOW there is an obstacle TO THE LEFT.
+            if( stop_obstacle["type"] == "permeable" )
+            { directions.push("forward") }
+            
+            if( sides.includes("top") &&
+                sides.includes("bottom") )
+            { directions.push("backward") }
+
+            if( sides.includes("top") &&
+                !sides.includes("bottom") )
+            { directions.push("left") }
+
+            if( !sides.includes("top") &&
+                sides.includes("bottom") )
+            { directions.push("right") }
+
+            if( !sides.includes("top") &&
+                !sides.includes("bottom") )
+            { directions.push("right")
+              directions.push("left") }
+            break;
+    }
+ 
+}
+
+/*
+
+
+   
+}
+
+*/
+//-----------------------------------------------
 
 function checkObstacles(spot)
 {
@@ -312,11 +464,10 @@ function checkObstacles(spot)
                 DictItem["type"]="edge"
                 DictItem["orient"]="horizontal"
                 DictItem["x"]=spot[0]
-                DictItem["y"]=0
+                DictItem["y"]=0 - 0.5
                 inColumn.push(DictItem) 
             }
             break;
-
 
         case "down":
             //check for obstacles in the same COLUMN
@@ -338,11 +489,10 @@ function checkObstacles(spot)
                 DictItem["type"]="edge"
                 DictItem["orient"]="horizontal"
                 DictItem["x"]=spot[0]
-                DictItem["y"]=document.getElementById("canvas").height /INTERVAL
+                DictItem["y"]=document.getElementById("canvas").height/INTERVAL - 0.5
                 inColumn.push(DictItem)
             }
             break;
-
             
         case "right":
             //check for obstacles in the same ROW
@@ -363,12 +513,11 @@ function checkObstacles(spot)
                 var DictItem = {}
                 DictItem["type"]="edge"
                 DictItem["orient"]="vertical"
-                DictItem["x"]=document.getElementById("canvas").width /INTERVAL
+                DictItem["x"]=document.getElementById("canvas").width/INTERVAL - 0.5
                 DictItem["y"]=spot[1]
                 inColumn.push(DictItem)
             }
             break;
-        
         
         case "left":    
             //check for obstacles in the same ROW
@@ -389,7 +538,7 @@ function checkObstacles(spot)
                 var DictItem = {}
                 DictItem["type"]="edge"
                 DictItem["orient"]="vertical"
-                DictItem["x"]=0
+                DictItem["x"]=0 - 0.5
                 DictItem["y"]=spot[1]
                 inColumn.push(DictItem) 
             }
@@ -408,7 +557,6 @@ function checkObstacles(spot)
         stop["obstacle"] = inColumn[0]
         stop["dist"] = Math.abs(stop["obstacle"]["y"] - spot[1])
     }
-
     
     if(inRow.length > 0) //if right or left
     {   //sort obstacles based on which is CLOSEST to your spot.
@@ -426,9 +574,6 @@ function checkObstacles(spot)
     return stop;
 }
 
-function obstacleHandler()
-{
-}
 
 function getCursorPosition(canvas, event) {
     //coordinates of the four borders of the canvas
@@ -475,6 +620,7 @@ function zoomOut()
     <input type="submit" value="Zoom Out" onclick="zoomOut()"/>
     <input type="submit" value="Refresh" onclick="setPage()" />
     </br></br>
+    <div id="action" >Action Square</div>
     <canvas id="canvas" onclick="clickHandler(event);"></canvas>
 </body>
 </html>
