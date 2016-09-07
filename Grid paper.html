@@ -4,15 +4,16 @@
 <meta charset=utf-8 />
 <title id="title">Hay Bales Maze       </title>
 <script type="text/javascript">
-//globals
+
+//GLOBALS
 var INTERVAL = 20;  //line spacing
 
 //size of canvas based on number of grids
 var X_GRIDS = 25;
 var Y_GRIDS = 9;
 
-var CANVAS_WIDTH = INTERVAL * X_GRIDS
-var CANVAS_HEIGHT = INTERVAL * Y_GRIDS
+var CANVAS_WIDTH = INTERVAL * X_GRIDS;
+var CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
 
 var MOVEDIST=2; //distance line moves on each refresh
 
@@ -23,12 +24,34 @@ var obstacles = []; //contains a list of all obstacles.
                         //   "x":     <x-coordinate of origin>
                         //   "y":     <y-coordinate of origin> }
 
+                        
+//The location element is declared here as a global variable.
+var spot = []; 
+
+
+//a few housekeeping items that need to happen
+//right when the page is loaded.
 function setPage()
 {
+    //the canvas needs to be set to the right size
+    //before the spot is initialized, or it will misbehave.
+    //So this once, these values get initialized twice.
     var canvas = document.getElementById("canvas");
     canvas.height = CANVAS_HEIGHT;
     canvas.width = CANVAS_WIDTH;
-    drawGrid()
+
+    //The starting location is intialized here.
+    //This can't be done when it is defined as a global.
+
+    //The spot is in reference to the GRID LINES
+    //the actual line is drawn halfway in the middle of the square.
+    //This makes obstacle comparisons easier.
+    //Notice, I subtract half an interval 
+    //so it doesn't start off the edge.
+    spot = [ 0, canvas.height/INTERVAL - 1/2 , "up" ];
+
+    animate_string('title');
+    drawGrid();
 }
 
 function animate_string(id)   //animates the title
@@ -47,6 +70,11 @@ function animate_string(id)   //animates the title
 
 function drawGrid() 
 {
+    //make sure the canvas is set to the right size.
+    var canvas = document.getElementById("canvas");
+    canvas.height = CANVAS_HEIGHT;
+    canvas.width = CANVAS_WIDTH;
+    
     var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d");
 
@@ -112,9 +140,9 @@ function clickHandler(event) {
 //    alert("Clicked!")
     
     canvas = document.getElementById("canvas");
-    var spot = getCursorPosition(canvas, event);
-    var x = spot[0];
-    var y = spot[1];
+    var location = getCursorPosition(canvas, event);
+    var x = location[0];
+    var y = location[1];
 
     var lessThanX = 0;
     var lessThanY = 0;
@@ -213,20 +241,14 @@ function clickHandler(event) {
 
 function startMaze()
 {
-
     canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d");
  
-    //spot is in reference to the GRID LINES
-    //the actual line is drawn halfway in the middle.
-    //it makes obstacle comparisons easier.
-    //I subtract half an interval so it doesn't start off the edge.
-    var spot = [ 0, canvas.height/INTERVAL - 1/2 , "up" ];
     var pixelsSpot;
-    
+        
     //an array containing the distance to the next stop
     //and the information about the next obstacle.
-    var stop = checkObstacles(spot);
+    var stop = checkObstacles();
 
     //move the line on an interval
     var time_interval = setInterval(function() {
@@ -270,35 +292,29 @@ function startMaze()
         pixelsSpot = stop["dist"]*INTERVAL;
         pixelsSpot -= MOVEDIST;
         stop["dist"] = pixelsSpot / INTERVAL;
-        
+
+        //If you hit an obstacle, clear the interval
+        //and handle each obstacle differently.
         if (stop["dist"] <= 0)
         {
             clearInterval(time_interval);
-            alert("You hit an obstacle or went off the edge!");
-//            obstacleHandler(time_interval, spot, stop["obstacle"]);
+            obstacleHandler(stop["obstacle"]);
         }        
         
     }, 30);  //how often in ms the line is moved.
 }
 
-//--------------------------------------------
+//===================================================
 
 
-function obstacleHandler(time_interval, spot, stop_obstacle)
+function obstacleHandler(stop_obstacle)
 {
     //just in case the interval is an odd number,
-    //and you didn't land exactly on INTERVAL/2
+    //and you didn't land exactly on INTERVAL
     //this will fix that problem. :-)
     spot[0]=Math.round(spot[0])
     spot[1]=Math.round(spot[1])
-    while (spot[0] % INTERVAL != 0)
-    {
-        spot[0]--
-    }
-    while (spot[1] % INTERVAL != 0)
-    {
-        spot[1]--
-    }
+
 
     var sides = [];  //will be populated with which sides
                      //of the square have obstacles in them
@@ -308,25 +324,25 @@ function obstacleHandler(time_interval, spot, stop_obstacle)
         if(  obstacles[i]["x"] == spot[0] &&
              obstacles[i]["y"] == spot[1] &&
              obstacles[i]["orient"] == "vertical" &&
-             !obstacles[i]["type"] == "permeable" )
+             obstacles[i]["type"] != "permeable" )
             {  sides.push("left");  }
         
         if(  obstacles[i]["x"] == spot[0] &&
              obstacles[i]["y"] == spot[1] &&
              obstacles[i]["orient"] == "horizontal" &&
-             !obstacles[i]["type"] == "permeable" )
+             obstacles[i]["type"] != "permeable" )
             {  sides.push("top");  }
         
         if(  obstacles[i]["x"] == (spot[0] + 1) &&
              obstacles[i]["y"] == spot[1] &&
              obstacles[i]["orient"] == "vertical" &&
-             !obstacles[i]["type"] == "permeable" )
+             obstacles[i]["type"] != "permeable" )
             {  sides.push("right");  }
                         
         if ( obstacles[i]["x"] == spot[0] &&
              obstacles[i]["y"] == (spot[1] + 1) &&
              obstacles[i]["orient"] == "horizontal" &&
-             !obstacles[i]["type"] == "permeable" )
+             obstacles[i]["type"] != "permeable" )
             {  sides.push("bottom");  }
     }
 
@@ -334,8 +350,8 @@ function obstacleHandler(time_interval, spot, stop_obstacle)
                         // choices the user has.
 
     //now handle the directions based on where you are oriented.
-    switch(spot[2])
-    {
+    switch(spot[2])  
+    {   //switch case for your direction when you stopped.
         case "up":  //we KNOW there is an obstacle on TOP.
             if( stop_obstacle["type"] == "permeable" )
             { directions.push("forward") }
@@ -424,19 +440,55 @@ function obstacleHandler(time_interval, spot, stop_obstacle)
               directions.push("left") }
             break;
     }
- 
+
+    //This will get erased eventually.
+    spot = [ 0, canvas.height/INTERVAL - 1/2 , "up" ];
+
+    
+    if(stop_obstacle["type"] == "edge")
+    {
+        spot = [ 0, canvas.height/INTERVAL - 1/2 , "up" ];
+        directions = [];
+        alert("You went off the edge!")
+    }
+
+    alert("Possible directions: " + directions);
+
+    
+    if(directions.length == 1 && directions[0] != "backward")
+    {
+        if(directions[0] == "right")
+        { turnRight(); }
+    
+        if(directions[0] == "left")
+        { turnLeft(); }        
+    }
+
+    if(directions.length == 1 && directions[0] == "backward")
+    {
+        turnBackwards();
+    }
 }
 
-/*
+//======================================================
+//======================================================
 
-
-   
+function turnRight()
+{
+    alert("I'm turning right!")
 }
 
-*/
-//-----------------------------------------------
+function turnLeft()
+{
+    alert("I'm turning left!")
+}
 
-function checkObstacles(spot)
+function turnBackwards()
+{
+    alert("Reversing direction!")
+}
+
+function checkObstacles()
 {
     var stop = {};
     var inColumn = [];
@@ -595,7 +647,7 @@ function zoomIn()
         INTERVAL += 5;
         CANVAS_WIDTH = INTERVAL * X_GRIDS;
         CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
-        setPage();
+        drawGrid();
     }
 }
 
@@ -606,7 +658,7 @@ function zoomOut()
         INTERVAL -= 5;
         CANVAS_WIDTH = INTERVAL * X_GRIDS;
         CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
-        setPage();
+        drawGrid();
     }
 }
 
@@ -614,13 +666,14 @@ function zoomOut()
 
 </script>
 </head>
-<body onload="animate_string('title'); setPage();">
+<body onload="setPage();">
     <input type="submit" value="Start the Maze" onclick="startMaze()"/>
     <input type="submit" value="Zoom In" onclick="zoomIn()"/>
     <input type="submit" value="Zoom Out" onclick="zoomOut()"/>
-    <input type="submit" value="Refresh" onclick="setPage()" />
-    </br></br>
-    <div id="action" >Action Square</div>
+    <input type="submit" value="Refresh" onclick="drawGrid()" />
+    <br/>
+    <div id="action" style="border:solid brown; display:inline-block; padding:5px; margin-top:5px;">Action Square</div>
+    <br/>
     <canvas id="canvas" onclick="clickHandler(event);"></canvas>
 </body>
 </html>
