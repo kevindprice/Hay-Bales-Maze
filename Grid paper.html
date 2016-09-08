@@ -3,19 +3,30 @@
 <head>
 <meta charset=utf-8 />
 <title id="title">Hay Bales Maze       </title>
+<link type="text/css" rel="stylesheet" href="style.css" />
 <script type="text/javascript">
 
 //GLOBALS
 var INTERVAL = 20;  //line spacing
 
 //size of canvas based on number of grids
-var X_GRIDS = 25;
-var Y_GRIDS = 9;
+var X_GRIDS = 28;
+var Y_GRIDS = 12;
 
 var CANVAS_WIDTH = INTERVAL * X_GRIDS;
 var CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
 
-var MOVEDIST=2; //distance line moves on each refresh
+var TIME_INTERVAL = 30; // how often in ms the line is moved.
+
+var MOVEDIST=3; //distance line moves on each refresh
+
+var OBSTACLE_TYPE = "wall"; //is used in "Create Maze" mode
+                            //to determine which type of obstacle
+                            //to draw. Possible types: 
+                            //  "wall"
+                            //  "permeable"
+                            //  "begin"
+                            //  "end"
 
 var obstacles = []; //contains a list of all obstacles.
                     //Each obstacle contains dictionaries:
@@ -24,7 +35,20 @@ var obstacles = []; //contains a list of all obstacles.
                         //   "x":     <x-coordinate of origin>
                         //   "y":     <y-coordinate of origin> }
 
-                        
+//All of the different possible buttons for the action bar
+startingHTML = "Actions: <input type='submit' value='Maze Solver' onclick='solveMaze()'/> <input type='submit' value='Create Maze' onclick='createMaze()'/> <input type='submit' value='Save Maze' onclick='saveMaze()' style='margin-left:40px'/> <input type='submit' value='Load Maze' onclick='loadMaze()'/> <input type='submit' value='Erase All' onclick='eraseMaze()'/> "
+
+mazeSOLVER = "Actions: <input type='submit' value='Start from Beginning' onclick='startMaze()'/> <input type='submit' value='Start from Custom Location' onclick='startCustom()'/> <input type='submit' value='Create Maze' onclick='createMaze()' style='margin-left: 20px;'/> "
+
+createMAZE = "<input type='submit' value='Return to Solver' onclick='solveMaze()'/> <input type='submit' value='Change Grid Size' onclick='changeGridSize()' style='margin-right: 15px;'/> Draw: <input type='submit' value='Wall' onclick='drawSetting(\"wall\")'/> <input type='submit' value='Permeable' onclick='drawSetting(\"permeable\")'/> <input type='submit' value='Beginning' onclick='drawSetting(\"begin\")'/> <input type='submit' value='End' onclick='drawSetting(\"end\")'/>"
+
+movingHTML = "Actions: <input type='submit' value='Stop the Maze' onclick='stopMaze()'/>"
+
+pausedHTML = "Actions: <input type='submit' value='Resume the Maze' onclick='resumeMaze()'/> <input type='submit' value='Restart the Maze' onclick='startMaze()'/>"
+
+turningHTML = "Actions: "
+
+
 //The location element is declared here as a global variable.
 var spot = []; 
 
@@ -33,6 +57,9 @@ var spot = [];
 //right when the page is loaded.
 function setPage()
 {
+    //set the action bar to say "Start the Maze"
+    document.getElementById("action").innerHTML = startingHTML;
+
     //the canvas needs to be set to the right size
     //before the spot is initialized, or it will misbehave.
     //So this once, these values get initialized twice.
@@ -48,11 +75,66 @@ function setPage()
     //This makes obstacle comparisons easier.
     //Notice, I subtract half an interval 
     //so it doesn't start off the edge.
-    spot = [ 0, canvas.height/INTERVAL - 1/2 , "up" ];
+    spot = [ 0, canvas.height/INTERVAL - 1/2 , "up", "stopped" ];
 
     animate_string('title');
     drawGrid();
 }
+
+
+function eraseMaze()
+{
+    if(confirm("Are you sure?"))
+    { 
+    
+        obstacles = []
+    
+        INTERVAL = 20;  //line spacing
+
+        X_GRIDS = 28;
+        Y_GRIDS = 12;
+        drawGrid();
+    }
+    
+}
+
+
+function changeGridSize()
+{
+    var input_value = "Hi";
+    while(isNaN(input_value))
+    {
+        input_value=Number(prompt("How many horizontal grids would you like?", X_GRIDS))
+    }
+    
+    if(input_value > 200)
+    { input_value = 200; } 
+    else if(input_value < 5)
+    { input_value = 5; }
+
+    X_GRIDS = Math.round(input_value);
+
+    input_value = "Hi";
+    while(isNaN(input_value))
+    {
+        input_value=Number(prompt("How many vertical grids would you like?", Y_GRIDS))
+    }
+    
+    if(input_value > 200)
+    { input_value = 200; } 
+    else if(input_value < 5)
+    { input_value = 5; }
+
+    Y_GRIDS = Math.round(input_value);
+
+    CANVAS_WIDTH = INTERVAL * X_GRIDS;
+    CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
+
+    
+    drawGrid();
+
+}
+
 
 function animate_string(id)   //animates the title
 {
@@ -98,52 +180,146 @@ function drawGrid()
         
     context.stroke(); 
 
-    drawObstacles(canvas, context);
+    refreshObstacles(canvas, context);
 }
 
-function drawObstacles(canvas, context)
+function refreshObstacles(canvas, context)
 {
 
-    context.beginPath();
-    context.strokeStyle="#FF0000";
-
-    for(var i=0; i<obstacles.length; i++)
+    var obst_types = ["wall","permeable","begin","end"];
+    
+    for(var h=0; h<obst_types.length; h++)
     {
-        var x1 = obstacles[i]["x"] * INTERVAL;
-        var y1 = obstacles[i]["y"] * INTERVAL;
-        var moveX;
-        var moveY;
+        context.beginPath();
         
-        if(obstacles[i]["orient"]=="vertical")
+        switch(obst_types[h])
+        {
+            case "wall":
+                context.strokeStyle="#FF0000";
+                break;
+            case "permeable":
+                context.strokeStyle="#0000FF";
+                break;
+            case "begin":
+                context.strokeStyle="#005500";
+                break;
+            case "end":
+                context.strokeStyle="#00DD00";
+                break;
+        }
+
+        for(var i=0; i<obstacles.length; i++)
+        {
+            var x = obstacles[i]["x"] * INTERVAL;
+            var y = obstacles[i]["y"] * INTERVAL;
+            var moveX;
+            var moveY;
+            if(obstacles[i]["type"]==obst_types[h])
             {
-                moveX = 0;
-                moveY = INTERVAL;
+                if(obstacles[i]["orient"]=="vertical")
+                {
+                    moveX = 0;
+                    moveY = INTERVAL;
+                }
+                else if(obstacles[i]["orient"]=="horizontal")
+                {
+                    moveX = INTERVAL;
+                    moveY = 0;
+                }
+
+                context.moveTo(x, y);  //Now move the line to the coordinate
+                context.lineTo(x + moveX, y + moveY);  //and draw the hash.
             }
-        else if(obstacles[i]["orient"]=="horizontal")
-            {
-                moveX = INTERVAL;
-                moveY = 0;
-            }
-        context.moveTo(x1, y1);  //Now move the line to the coordinate
-        context.lineTo(x1 + moveX, y1 + moveY);  //and draw the hash.
-    
+        }
+        context.stroke();
     }
-
-    context.stroke(); 
-
-    
 }
-
 
 
 function clickHandler(event) {
-//    alert("Clicked!")
-    
+    //get canvas
     canvas = document.getElementById("canvas");
-    var location = getCursorPosition(canvas, event);
-    var x = location[0];
-    var y = location[1];
 
+    //now find coordinates of the click relative to the canvas.
+
+    var rect = canvas.getBoundingClientRect(); //borders of the canvas
+
+    //clientX = the click relative to the page edge
+    //rect.left = the canvas edge relative to page
+    var x = Math.round(event.clientX - rect.left);
+    var y = Math.round(event.clientY - rect.top);
+
+    switch(spot[3])  //decide what to do with the click
+    {
+        case "moving":
+            stopMaze();
+            break;
+        case "drawing":
+            setLine(x, y);
+            break;
+        case "startCustom":
+            startCustom(x, y);
+            break;
+        default:
+    }    
+}
+
+//This function handles starting in a custom location.
+//It starts in three different modes depending on what state
+//the user is in. I could have made three functions, but
+//there are a lot of functions in this program.
+function startCustom(x=-1, y=-1, direction = "")
+{
+    if(x == -1 && direction == "") //if the user hasn't clicked yet...
+    {
+        spot[3]="startCustom"
+        
+        document.getElementById("action").innerHTML = "Please click where you would like to start."
+    }
+    else if(x != -1)
+    {
+        while(x % INTERVAL != 0)
+        {x--;}
+        while(y % INTERVAL != 0)
+        {y--;}
+ 
+        spot[0] = x / INTERVAL;
+        spot[1] = y / INTERVAL;
+        
+        document.getElementById("action").innerHTML = "Start direction: <input type='submit' value='Up' onclick='startCustom(-1,-1,\"up\")'/> <input type='submit' value='Down' onclick='startCustom(-1,-1,\"down\")'/> <input type='submit' value='Right' onclick='startCustom(-1,-1,\"right\")'/> <input type='submit' value='Left' onclick='startCustom(-1,-1,\"left\")'/>"
+    }
+    else if(direction != "")
+    {
+        spot[2]=direction;
+        resumeMaze()
+    }
+}
+
+
+function createMaze()
+{
+    document.getElementById("action").innerHTML = createMAZE;
+    
+    spot[3]="drawing";
+}
+
+function solveMaze()
+{
+    document.getElementById("action").innerHTML = mazeSOLVER;
+
+    spot[3]="stopped";
+}
+
+function drawSetting(type)
+{
+    OBSTACLE_TYPE = type;
+}
+
+//*******************************************************
+//*******************************************************
+
+function setLine(x, y)
+{
     var lessThanX = 0;
     var lessThanY = 0;
     //gets whether it's closer to a horizontal or vertical line
@@ -159,87 +335,217 @@ function clickHandler(event) {
            lessThanY = 1;
     }
 
-    //Now draw a red dash on the closest segment to the click.
-
-    //sets up the context...
-    var context = canvas.getContext("2d");
-    context.strokeStyle="#FF0000";
-    context.beginPath();
-    var x1 = x;
-    var y1 = y;
-
     
     if (x_dist < y_dist) {  //closer to vertical line, VERTICAL hash
-        var moveX = 0;       //vertical hash mark, so x doesn't move
-        var moveY = INTERVAL;
         
         if (lessThanX == 1){
         //user clicked BEHIND grid mark
-            while(x1 % INTERVAL != 0) //line up exactly to grid mark
-                { x1++; } //it's ++ because you're BEHIND the grid mark
-            while(y1 % INTERVAL != 0)
-               { y1--; }
+            while(x % INTERVAL != 0) //line up exactly to grid mark
+                { x++; } //it's ++ because you're BEHIND the grid mark
+            while(y % INTERVAL != 0)
+               { y--; }
         } else {   
             //user clicked IN FRONT of grid mark
-            while(x1 % INTERVAL != 0)
-                { x1--; }
-            while(y1 % INTERVAL != 0)
-               { y1--; }
+            while(x % INTERVAL != 0)
+                { x--; }
+            while(y % INTERVAL != 0)
+               { y--; }
         }
 
         //now save x and y based on intervals
-        var x_int = x1 / INTERVAL;
-        var y_int = y1 / INTERVAL;
+        var x_int = x / INTERVAL;
+        var y_int = y / INTERVAL;
 
-        //add item to objects list
-        var DictItem = {}
-        DictItem["type"]="wall"
-        DictItem["orient"]="vertical"
-        DictItem["x"]=x_int
-        DictItem["y"]=y_int
-            
-        obstacles.push(DictItem) 
+        //create new obstacle item
+        var DictItem = {};
+        DictItem["type"]=OBSTACLE_TYPE;
+        DictItem["orient"]="vertical";
+        DictItem["x"]=x_int;
+        DictItem["y"]=y_int;
     }
     else {      //closer to horizontal line, HORIZONTAL hash
-        var moveX = INTERVAL;
-        var moveY = 0;  //HORIZONTAL hash, so y doesn't move
 
         if(lessThanY == 1) {  
         //user clicked BEHIND grid mark
-            while(x1 % INTERVAL != 0) //line up exactly to grid mark
-                { x1--; } 
-            while(y1 % INTERVAL != 0)           
-                { y1++; } //it's ++ because you're BEHIND the grid mark
+            while(x % INTERVAL != 0) //line up exactly to grid mark
+                { x--; } 
+            while(y % INTERVAL != 0)           
+                { y++; } //it's ++ because you're BEHIND the grid mark
         } else { 
         //user clicked IN FRONT of grid mark
-            while(x1 % INTERVAL != 0)
-                { x1--; }
-            while(y1 % INTERVAL != 0)
-                { y1--; }
+            while(x % INTERVAL != 0)
+                { x--; }
+            while(y % INTERVAL != 0)
+                { y--; }
         }
 
         //now save x and y based on intervals
-        var x_int = x1 / INTERVAL;
-        var y_int = y1 / INTERVAL;
+        var x_int = x / INTERVAL;
+        var y_int = y / INTERVAL;
         
         //add item to objects list
-        var DictItem = {}
-        DictItem["type"]="wall"
-        DictItem["orient"]="horizontal"
-        DictItem["x"]=x_int
-        DictItem["y"]=y_int
-        obstacles.push(DictItem) 
+        var DictItem = {};
+        DictItem["type"]=OBSTACLE_TYPE;
+        DictItem["orient"]="horizontal";
+        DictItem["x"]=x_int;
+        DictItem["y"]=y_int;
+    }
+
+    //check if an obstacle already exists at that spot.
+    //If it does, erase that obstacle from the list.
+    //If it does not, create a new obstacle.
+    var isObstacle = checkForObstacle(DictItem)
+    if (isObstacle == -1)
+    { 
+      switch(OBSTACLE_TYPE)
+      {
+        case "wall":
+            drawObstacle(DictItem);
+            break;
+        case "permeable":
+            drawObstacle(DictItem);
+            break;
+        case "begin":
+            drawObstacle(DictItem);
+            break;
+        case "end":
+            drawObstacle(DictItem);
+            break;
+        }
+    }
+    else { 
+        obstacles.splice(isObstacle, 1) 
+        drawGrid();    //refresh the page to erase the obstacle.
+    }   
+}
+
+
+function findBegin()
+{
+    for (var i=0; i<obstacles.length; i++)
+    {
+        if(obstacles[i]["type"]=="begin")
+        { return i; }
+    }
+    
+    return -1;
+}
+
+
+function drawObstacle(obstacle)
+{
+
+    if(obstacle["type"] == "begin")
+    {
+        obstacle["orient"] == "horizontal";
+        var isObstacle = findBegin()
         
-   } 
+        if (isObstacle != -1) //e.g. if there IS a beginning square
+        { 
+            obstacles.splice(isObstacle, 1) 
+            drawGrid();
+        }
+    }
+    
+    obstacles.push(obstacle); 
 
-    context.moveTo(x1, y1);  //Now move the line to the coordinate
-    context.lineTo(x1 + moveX, y1 + moveY);  //and draw the hash.
+    x = obstacle["x"] * INTERVAL
+    y = obstacle["y"] * INTERVAL
+    
+    switch(obstacle["orient"])
+    {
+        case "vertical":
+            var moveX = 0;
+            var moveY = INTERVAL;
+            break;
+        case "horizontal":
+            var moveX = INTERVAL;
+            var moveY = 0;
+            break;
+    }
 
-    context.stroke(); 
+    //sets up the context...
+    canvas = document.getElementById("canvas");
+    var context = canvas.getContext("2d");
+    
+    switch(OBSTACLE_TYPE)
+    {
+        case "wall":
+            context.strokeStyle="#FF0000";
+            break;
+        case "end":
+            context.strokeStyle="#00DD00";
+            break;
+        case "permeable":
+            context.strokeStyle="#0000FF";
+            break;
+        case "begin":
+            context.strokeStyle="#005500";
+            break;
+        }
+
+    context.beginPath();
+    
+    context.moveTo(x, y);  //Move the line to the coordinate
+    context.lineTo(x + moveX, y + moveY);  //and draw the hash.
+
+    context.stroke();
+}
+
+//****************************************************
+//****************************************************
+
+//check the obstacles list for a given obstacle.
+//If that obstacle already exists, return the index of the obstacle.
+//Otherwise, return -1.
+function checkForObstacle(obstacle)
+{
+    for (var i=0; i<obstacles.length; i++)
+    {
+        if( obstacle["x"] == obstacles[i]["x"] &&
+            obstacle["y"] == obstacles[i]["y"] &&
+            obstacle["orient"] == obstacles[i]["orient"] )
+        { return i; }
+    }
+    
+    return -1;
+}
+
+
+function stopMaze()
+{
+    spot[3] = "stopped";
+    document.getElementById("action").innerHTML = pausedHTML;
+}
+
+
+function resumeMaze()
+{
+    spot[3] = "moving";
+    document.getElementById("action").innerHTML = movingHTML;
+    move();
 }
 
 
 function startMaze()
+{
+    beginObstacle = findBegin()
+    if(beginObstacle == -1)
+    {
+        alert("A beginning location has not been placed yet!\n\nGo to the Create Maze page and place the maze beginning.\nThe maze will start upwards from that location.")
+    } else
+    {
+        //set the action bar to say "Start the Maze"
+        document.getElementById("action").innerHTML = movingHTML;
+
+        spot = [ obstacles[beginObstacle]["x"], obstacles[beginObstacle]["y"] - 1/2 , "up", "moving"];
+        drawGrid(); //to erase the line that's already there. Refresh.
+        move();
+    }
+}
+
+//This is the function that moves the line.
+function move()
 {
     canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d");
@@ -293,6 +599,11 @@ function startMaze()
         pixelsSpot -= MOVEDIST;
         stop["dist"] = pixelsSpot / INTERVAL;
 
+        if(spot[3] == "stopped")
+        {
+            clearInterval(time_interval);        
+        }
+        
         //If you hit an obstacle, clear the interval
         //and handle each obstacle differently.
         if (stop["dist"] <= 0)
@@ -301,21 +612,22 @@ function startMaze()
             obstacleHandler(stop["obstacle"]);
         }        
         
-    }, 30);  //how often in ms the line is moved.
+    }, TIME_INTERVAL);  //how often in ms the line is moved.
 }
 
 //===================================================
 
-
+//this function handles what to do when you hit an obstacle.
 function obstacleHandler(stop_obstacle)
 {
     //just in case the interval is an odd number,
     //and you didn't land exactly on INTERVAL
     //this will fix that problem. :-)
-    spot[0]=Math.round(spot[0])
-    spot[1]=Math.round(spot[1])
+    spot[0]=Math.round(spot[0]);
+    spot[1]=Math.round(spot[1]);
 
-
+    spot[3]="stopped";
+    
     var sides = [];  //will be populated with which sides
                      //of the square have obstacles in them
 
@@ -440,22 +752,27 @@ function obstacleHandler(stop_obstacle)
               directions.push("left") }
             break;
     }
-
-    //This will get erased eventually.
-    spot = [ 0, canvas.height/INTERVAL - 1/2 , "up" ];
-
+    
+    //to simplify changing the action bar
+    actionBar = document.getElementById("action");
     
     if(stop_obstacle["type"] == "edge")
     {
-        spot = [ 0, canvas.height/INTERVAL - 1/2 , "up" ];
+        //set the action bar to say "Start the Maze"
+        actionBar.innerHTML = mazeSOLVER;
+        spot[3] = "stopped";
         directions = [];
         alert("You went off the edge!")
     }
-
-    alert("Possible directions: " + directions);
-
-    
-    if(directions.length == 1 && directions[0] != "backward")
+    else if(stop_obstacle["type"] == "end")
+    {
+        actionBar.innerHTML = mazeSOLVER;
+        actionBar.innerHTML = mazeSOLVER;
+        spot[3] = "stopped";
+        directions = [];
+        alert("Goncratulations! You win!");
+    }
+    else if (directions.length == 1 && directions[0] != "backward")
     {
         if(directions[0] == "right")
         { turnRight(); }
@@ -463,11 +780,36 @@ function obstacleHandler(stop_obstacle)
         if(directions[0] == "left")
         { turnLeft(); }        
     }
-
-    if(directions.length == 1 && directions[0] == "backward")
+    else 
     {
-        turnBackwards();
+        actionBar.innerHTML = turningHTML;
     }
+
+    if(directions.length != 1)
+    {
+        if(directions.includes("left"))
+        {
+            actionBar.innerHTML += " <input type='submit' value='Turn Left' onclick='turnLeft()'/>"
+        }
+
+        if(directions.includes("right"))
+        {
+            actionBar.innerHTML += " <input type='submit' value='Turn Right' onclick='turnRight()'/>"
+        }
+    }
+    
+    if(directions.includes("backward"))
+    {
+        actionBar.innerHTML += " <input type='submit' value='Turn Around' onclick='turnBackward()'/>"
+    }
+    
+    if(directions.includes("forward"))
+    {
+        actionBar.innerHTML += " <input type='submit' value='Move Forward' onclick='moveForward()'/>"
+    }
+
+    if(directions.length > 1 && !directions.includes("backward") )
+    {actionBar.innerHTML += "<input type='submit' value='Restart the Maze' onclick='startMaze()' style='margin-left: 15px;'/>" }
 }
 
 //======================================================
@@ -475,19 +817,102 @@ function obstacleHandler(stop_obstacle)
 
 function turnRight()
 {
-    alert("I'm turning right!")
+//    alert("I'm turning right!")
+    switch(spot[2])
+    {
+        case "up":
+            spot[2]="right"
+            break;
+        case "down":
+            spot[2]="left"
+            break;
+        case "right":
+            spot[2]="down"
+            break;
+        case "left":
+            spot[2]="up"
+            break;
+    }
+    resumeMaze()
 }
 
 function turnLeft()
 {
-    alert("I'm turning left!")
+//    alert("I'm turning left!")
+    switch(spot[2])
+    {
+        case "up":
+            spot[2]="left"
+            break;
+        case "down":
+            spot[2]="right"
+            break;
+        case "right":
+            spot[2]="up"
+            break;
+        case "left":
+            spot[2]="down"
+            break;
+    }
+    resumeMaze()
 }
 
-function turnBackwards()
+function moveForward()
 {
-    alert("Reversing direction!")
+    var pixelsSpot;
+    
+    //move the line forward just a tad to get it past
+    //its current obstacle, so it can find a new one.
+    //Uses the same algorithm as above.
+    switch(spot[2])  
+    {                
+        case "up":
+            pixelsSpot = spot[1]*INTERVAL;
+            pixelsSpot -= MOVEDIST;
+            spot[1] = pixelsSpot / INTERVAL;
+            break;
+        case "down":
+            pixelsSpot = spot[1]*INTERVAL;
+            pixelsSpot += MOVEDIST;
+            spot[1] = pixelsSpot / INTERVAL;
+            break;
+        case "right":
+            pixelsSpot = spot[0]*INTERVAL;
+            pixelsSpot += MOVEDIST;
+            spot[0] = pixelsSpot / INTERVAL;
+            break;
+        case "left":
+            pixelsSpot = spot[0]*INTERVAL;
+            pixelsSpot -= MOVEDIST;
+            spot[0] = pixelsSpot / INTERVAL;
+            break;
+        }
+    resumeMaze();
 }
 
+function turnBackward()
+{
+//    alert("Reversing direction!")
+    switch(spot[2])
+    {
+        case "up":
+            spot[2]="down"
+            break;
+        case "down":
+            spot[2]="up"
+            break;
+        case "right":
+            spot[2]="left"
+            break;
+        case "left":
+            spot[2]="right"
+            break;
+    }
+    resumeMaze()
+}
+
+//when you start moving, this finds which obstacle you're
+//going to hit next.
 function checkObstacles()
 {
     var stop = {};
@@ -528,7 +953,7 @@ function checkObstacles()
             for (var i=0; i<obstacles.length; i++)
             {
                 if(obstacles[i]["x"] == spot[0] &&
-                   obstacles[i]["y"] >= spot[1] &&
+                   obstacles[i]["y"] > spot[1] && // >, not >=
                    obstacles[i]["orient"] == "horizontal" )
                 {
                     inColumn.push(obstacles[i]);
@@ -541,7 +966,7 @@ function checkObstacles()
                 DictItem["type"]="edge"
                 DictItem["orient"]="horizontal"
                 DictItem["x"]=spot[0]
-                DictItem["y"]=document.getElementById("canvas").height/INTERVAL - 0.5
+                DictItem["y"]=document.getElementById("canvas").height/INTERVAL + 1 - 0.5 //+1 because it's going DOWN
                 inColumn.push(DictItem)
             }
             break;
@@ -553,21 +978,21 @@ function checkObstacles()
             for (var i=0; i<obstacles.length; i++)
             {
                 if(obstacles[i]["y"] == spot[1] &&
-                   obstacles[i]["x"] >= spot[0] &&
+                   obstacles[i]["x"] > spot[0] && // >, not >=
                    obstacles[i]["orient"] == "vertical" )
                 {
                     inRow.push(obstacles[i]);
                 }
             }
             //if NONE, then add the RIGHT edge of the screen.
-            if(inColumn.length == 0)
+            if(inRow.length == 0)
             {
                 var DictItem = {}
                 DictItem["type"]="edge"
                 DictItem["orient"]="vertical"
-                DictItem["x"]=document.getElementById("canvas").width/INTERVAL - 0.5
+                DictItem["x"]=document.getElementById("canvas").width/INTERVAL + 1 - 0.5  // +1 because it's moving RIGHT
                 DictItem["y"]=spot[1]
-                inColumn.push(DictItem)
+                inRow.push(DictItem)
             }
             break;
         
@@ -585,14 +1010,14 @@ function checkObstacles()
                 }
             }
             //if NONE, then add the LEFT edge of the screen.
-            if(inColumn.length == 0)
+            if(inRow.length == 0)
             {
                 var DictItem = {}
                 DictItem["type"]="edge"
                 DictItem["orient"]="vertical"
                 DictItem["x"]=0 - 0.5
                 DictItem["y"]=spot[1]
-                inColumn.push(DictItem) 
+                inRow.push(DictItem) 
             }
             break;
     }
@@ -607,7 +1032,19 @@ function checkObstacles()
 
         //now return the closest obstacle and it's distance.
         stop["obstacle"] = inColumn[0]
-        stop["dist"] = Math.abs(stop["obstacle"]["y"] - spot[1])
+        
+        switch(spot[2])
+        {
+            case "up":
+                stop["dist"] = Math.abs(stop["obstacle"]["y"] - spot[1])
+                break;
+            case "down":
+                stop["dist"] = Math.abs(stop["obstacle"]["y"] - spot[1]) - 1 //minus ONE grid.          
+                break;
+        }
+
+
+
     }
     
     if(inRow.length > 0) //if right or left
@@ -620,25 +1057,27 @@ function checkObstacles()
 
         //now return the closest obstacle and it's distance.
         stop["obstacle"] = inRow[0]
-        stop["dist"] = Math.abs(stop["obstacle"]["x"] - spot[0])
+
+        switch(spot[2])
+        {
+            case "right":
+                stop["dist"] = Math.abs(stop["obstacle"]["x"] - spot[0] - 1) // minus ONE grid.
+                break;
+            case "left":
+                stop["dist"] = Math.abs(stop["obstacle"]["x"] - spot[0])
+                break;
+        }
+    }
+
+    if(stop["obstacle"]["type"] == "end")
+    {
+        stop["dist"] += 0.5; //so you actually hit the endpost :-).
     }
 
     return stop;
 }
 
 
-function getCursorPosition(canvas, event) {
-    //coordinates of the four borders of the canvas
-    var rect = canvas.getBoundingClientRect();
-
-    //clientX = the click relative to the page edge
-    //rect.left = the canvas edge relative to page
-    var x = Math.round(event.clientX - rect.left);
-    var y = Math.round(event.clientY - rect.top);
-
-    //the coordinate relative to the canvas
-    return [x,y]
-}
 
 function zoomIn()
 {
@@ -662,18 +1101,55 @@ function zoomOut()
     }
 }
 
+function speedUp()
+{
+    if(TIME_INTERVAL > 10)
+    { TIME_INTERVAL -=5 }
+}
+
+function slowDown()
+{
+    if(TIME_INTERVAL < 60)
+    { TIME_INTERVAL += 5 }
+}
+
+function loadMaze()
+{
+    document.getElementById("action").innerHTML = "Your file: <input type='file' id='files' name='files[]'/> <input type='submit' value='Cancel'  onclick='cancelButton()'/>"
+    
+    document.getElementById('files').addEventListener('change', handleFileSelect, false);
+    
+}
+
+function cancelButton()
+{
+    document.getElementById('files').removeEventListener("change",handleFileSelect)
+    document.getElementById('action').innerHTML = startingHTML;
+}
+
+function handleFileSelect(evt)
+{
+    var files = evt.target.files;
+    document.getElementById('action').innerHTML = startingHTML;
+}
 
 
+function saveMaze()
+{
+}
 </script>
 </head>
 <body onload="setPage();">
-    <input type="submit" value="Start the Maze" onclick="startMaze()"/>
-    <input type="submit" value="Zoom In" onclick="zoomIn()"/>
-    <input type="submit" value="Zoom Out" onclick="zoomOut()"/>
-    <input type="submit" value="Refresh" onclick="drawGrid()" />
-    <br/>
-    <div id="action" style="border:solid brown; display:inline-block; padding:5px; margin-top:5px;">Action Square</div>
-    <br/>
+    <div id="action"></div> <br/><br/>
+
+    <div id="rotate">
+        <input type="submit" value="Speed(+)" onclick="speedUp()"/>
+        <input type="submit" value="Speed(-)" onclick="slowDown()"/>
+        <input type="submit" value="Zoom In" onclick="zoomIn()"/>
+        <input type="submit" value="Zoom Out" onclick="zoomOut()"/>
+        <input type="submit" value="Refresh" onclick="drawGrid()"/>
+        <input type="submit" value="Main Menu" onclick="document.getElementById('action').innerHTML = startingHTML;"/>
+    </div>
     <canvas id="canvas" onclick="clickHandler(event);"></canvas>
 </body>
 </html>
