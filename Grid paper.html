@@ -4,6 +4,7 @@
 <meta charset=utf-8 />
 <title id="title">Hay Bales Maze       </title>
 <link type="text/css" rel="stylesheet" href="style.css" />
+<script type="text/javascript" src="FileSaver.js"></script>
 <script type="text/javascript">
 
 //GLOBALS
@@ -11,7 +12,7 @@ var INTERVAL = 20;  //line spacing
 
 //size of canvas based on number of grids
 var X_GRIDS = 28;
-var Y_GRIDS = 12;
+var Y_GRIDS = 25;
 
 var CANVAS_WIDTH = INTERVAL * X_GRIDS;
 var CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
@@ -27,7 +28,7 @@ var OBSTACLE_TYPE = "wall"; //is used in "Create Maze" mode
                             //  "permeable"
                             //  "begin"
                             //  "end"
-
+                            
 var obstacles = []; //contains a list of all obstacles.
                     //Each obstacle contains dictionaries:
                         // { "type":  <obstacle type>
@@ -36,15 +37,17 @@ var obstacles = []; //contains a list of all obstacles.
                         //   "y":     <y-coordinate of origin> }
 
 //All of the different possible buttons for the action bar
-startingHTML = "Actions: <input type='submit' value='Maze Solver' onclick='solveMaze()'/> <input type='submit' value='Create Maze' onclick='createMaze()'/> <input type='submit' value='Save Maze' onclick='saveMaze()' style='margin-left:40px'/> <input type='submit' value='Load Maze' onclick='loadMaze()'/> <input type='submit' value='Erase All' onclick='eraseMaze()'/> "
+startingHTML = "Actions: <input type='submit' value='Maze Solver' onclick='solveMaze()'/> <input type='submit' value='Create Maze' onclick='createMaze()'/> <input type='submit' value='Save Maze' onclick='saveMaze()' style='margin-left:40px'/> <input type='submit' value='Load Maze' onclick='loadMaze()'/>"
 
-mazeSOLVER = "Actions: <input type='submit' value='Start from Beginning' onclick='startMaze()'/> <input type='submit' value='Start from Custom Location' onclick='startCustom()'/> <input type='submit' value='Create Maze' onclick='createMaze()' style='margin-left: 20px;'/> "
+mazeSOLVER = "Starting location: <input type='submit' value='Beginning' onclick='startMaze()'/> <input type='submit' value='Custom Location' onclick='startCustom()'/> <input type='submit' value='Create Maze' onclick='createMaze()' style='margin-left: 20px;'/> "
 
-createMAZE = "<input type='submit' value='Return to Solver' onclick='solveMaze()'/> <input type='submit' value='Change Grid Size' onclick='changeGridSize()' style='margin-right: 15px;'/> Draw: <input type='submit' value='Wall' onclick='drawSetting(\"wall\")'/> <input type='submit' value='Permeable' onclick='drawSetting(\"permeable\")'/> <input type='submit' value='Beginning' onclick='drawSetting(\"begin\")'/> <input type='submit' value='End' onclick='drawSetting(\"end\")'/>"
+//<input type='submit' value='Return to Solver' onclick='solveMaze()'/> 
 
-movingHTML = "Actions: <input type='submit' value='Stop the Maze' onclick='stopMaze()'/>"
+createMAZE = "<input type='submit' value='Change Grid Size' onclick='changeGridSize()'/> <input type='submit' value='Erase All' onclick='eraseMaze()' style='margin-right: 15px;'/> Draw: <input type='submit' value='Wall' onclick='drawSetting(\"wall\")'/> <input type='submit' value='Permeable' onclick='drawSetting(\"permeable\")'/> <input type='submit' value='Beginning' onclick='drawSetting(\"begin\")'/> <input type='submit' value='End' onclick='drawSetting(\"end\")'/>"
 
-pausedHTML = "Actions: <input type='submit' value='Resume the Maze' onclick='resumeMaze()'/> <input type='submit' value='Restart the Maze' onclick='startMaze()'/>"
+movingHTML = "Actions: <input type='submit' value='Stop the Maze' onclick='stopMaze()'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()'/>"
+
+pausedHTML = "Actions: <input type='submit' value='Resume the Maze' onclick='resumeMaze()'/> <input type='submit' value='Restart the Maze' onclick='startMaze()'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()'/>"
 
 turningHTML = "Actions: "
 
@@ -437,7 +440,7 @@ function drawObstacle(obstacle)
 
     if(obstacle["type"] == "begin")
     {
-        obstacle["orient"] == "horizontal";
+        obstacle["orient"] = "horizontal";
         var isObstacle = findBegin()
         
         if (isObstacle != -1) //e.g. if there IS a beginning square
@@ -953,7 +956,7 @@ function checkObstacles()
             for (var i=0; i<obstacles.length; i++)
             {
                 if(obstacles[i]["x"] == spot[0] &&
-                   obstacles[i]["y"] > spot[1] && // >, not >=
+                   obstacles[i]["y"] > spot[1] + 1 &&
                    obstacles[i]["orient"] == "horizontal" )
                 {
                     inColumn.push(obstacles[i]);
@@ -978,7 +981,7 @@ function checkObstacles()
             for (var i=0; i<obstacles.length; i++)
             {
                 if(obstacles[i]["y"] == spot[1] &&
-                   obstacles[i]["x"] > spot[0] && // >, not >=
+                   obstacles[i]["x"] > spot[0] + 1 && // >, not >=
                    obstacles[i]["orient"] == "vertical" )
                 {
                     inRow.push(obstacles[i]);
@@ -1104,47 +1107,113 @@ function zoomOut()
 function speedUp()
 {
     if(TIME_INTERVAL > 10)
-    { TIME_INTERVAL -=5 }
+    { TIME_INTERVAL -= 10 }
 }
 
 function slowDown()
 {
-    if(TIME_INTERVAL < 60)
-    { TIME_INTERVAL += 5 }
+    if(TIME_INTERVAL < 100)
+    { TIME_INTERVAL += 10 }
 }
 
 function loadMaze()
 {
-    document.getElementById("action").innerHTML = "Your file: <input type='file' id='files' name='files[]'/> <input type='submit' value='Cancel'  onclick='cancelButton()'/>"
-    
-    document.getElementById('files').addEventListener('change', handleFileSelect, false);
-    
+    document.getElementById("action").innerHTML = "File Options: <input type='file' accept='text/plain' onchange='getFile(event)' id='files' name='files[]' style='width: 75px;'/> <input type='submit' value='Cancel'  onclick='document.getElementById(\"action\").innerHTML = startingHTML;'/>"
 }
 
-function cancelButton()
+function getFile(event)
 {
-    document.getElementById('files').removeEventListener("change",handleFileSelect)
-    document.getElementById('action').innerHTML = startingHTML;
+    var file = event.target.files[0];
+
+    if(file) {
+        document.getElementById('action').innerHTML = startingHTML;
+
+        var reader = new FileReader();
+        reader.onload = function(event) {
+            var contents = event.target.result;
+            processFile(contents);
+        };
+
+        reader.onerror = function(event) {
+            console.error("File could not be read! Code " + event.target.error.code);
+        };
+    }
+    
+    reader.readAsText(file);
 }
 
-function handleFileSelect(evt)
+function processFile(contents)
 {
-    var files = evt.target.files;
-    document.getElementById('action').innerHTML = startingHTML;
+    // Process the file line by line
+    //var lines = contents.split('\n');
+    
+    //split the first line and capture the grid size.
+    var variables = contents.split(' ')
+    X_GRIDS = Number(variables[0].replace( /^\D+/g, '')); // replace all leading non-digits with nothing
+    
+    Y_GRIDS = Number(variables[1].replace( /^\D+/g, ''));
+    
+    CANVAS_WIDTH = INTERVAL * X_GRIDS;
+    CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
+
+    
+    //Each obstacle contains dictionaries:
+    // { "type":  <obstacle type>
+    //   "orient": <obstacle orientation>
+    //   "x":     <x-coordinate of origin>
+    //   "y":     <y-coordinate of origin> }
+
+    obstacles = []
+    
+    for(var i = 2; i < variables.length; i+=4)
+    {
+        var DictItem = {};
+        
+        DictItem["type"]=variables[i].replace(/^(type=)/g, '');
+        DictItem["orient"]=variables[i+1].replace(/^(orient=)/g, '');
+        DictItem["x"]=Number(variables[i+2].replace( /^\D+/g, ''));
+        DictItem["y"]=Number(variables[i+3].replace( /^\D+/g, ''));
+
+        obstacles.push(DictItem)    
+    }
+    drawGrid()
 }
 
 
 function saveMaze()
 {
+    document.getElementById("action").innerHTML = "Output Filename: <input type='text' id='savefield' style='width:110px; margin-left: 5px;'/>.txt <input type='submit' style='margin-left:20px;' value='OK' onclick='outputFile()'/> <input type='submit' value='Cancel' onclick='document.getElementById(\"action\").innerHTML = startingHTML;'/>"
 }
+
+function outputFile()
+{
+
+    var textString = "";
+    textString += "X_GRIDS=" + X_GRIDS + " Y_GRIDS=" + Y_GRIDS
+    
+    for(var i = 0; i<obstacles.length; i++)
+    {
+        textString += " type=" + obstacles[i]["type"] + " orient=" + obstacles[i]["orient"] + " x=" + obstacles[i]["x"] + " y=" + obstacles[i]["y"] 
+    }
+        
+    var savename = document.getElementById('savefield').value + ".txt"
+
+    //handled by FileSaver.js included at top.
+    var blob = new Blob([textString], {type: "text/plain;charset=utf-8"});
+    saveAs(blob, savename);
+
+    //do this last after processing the file.
+    document.getElementById('action').innerHTML = startingHTML;
+
+    
+}
+
 </script>
 </head>
 <body onload="setPage();">
     <div id="action"></div> <br/><br/>
 
     <div id="rotate">
-        <input type="submit" value="Speed(+)" onclick="speedUp()"/>
-        <input type="submit" value="Speed(-)" onclick="slowDown()"/>
         <input type="submit" value="Zoom In" onclick="zoomIn()"/>
         <input type="submit" value="Zoom Out" onclick="zoomOut()"/>
         <input type="submit" value="Refresh" onclick="drawGrid()"/>
