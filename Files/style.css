@@ -20,13 +20,3 @@
     margin-left: 25px;
     float:left;
 }
-
-
-#none {
-    /*transform:rotate(-90deg) does the trick
-     without these statements.*/
-    -ms-transform:rotate(-90deg); /* IE 9 */
-    -moz-transform:rotate(-90deg); /* Firefox */
-    -webkit-transform:rotate(-90deg); /* Safari and Chrome */
-    -o-transform:rotate(-90deg); /* Opera */     
-}

@@ -2,9 +2,10 @@
 <html>
 <head>
 <meta charset=utf-8 />
-<title id="title">Hay Bales Maze       </title>
-<link type="text/css" rel="stylesheet" href="style.css" />
-<script type="text/javascript" src="FileSaver.js"></script>
+    <title id="title">Hay Bales Maze       </title>
+    <link type="text/css" rel="stylesheet" href="Files/style.css" />
+    <script type="text/javascript" src="Files/FileSaver.js"></script>
+
 <script type="text/javascript">
 
 //GLOBALS
@@ -37,7 +38,7 @@ var obstacles = []; //contains a list of all obstacles.
                         //   "y":     <y-coordinate of origin> }
 
 //All of the different possible buttons for the action bar
-startingHTML = "Actions: <input type='submit' value='Maze Solver' onclick='solveMaze()'/> <input type='submit' value='Create Maze' onclick='createMaze()'/> <input type='submit' value='Save Maze' onclick='saveMaze()' style='margin-left:40px'/> <input type='submit' value='Load Maze' onclick='loadMaze()'/>"
+startingHTML = "Actions: <input type='submit' value='Instructions' onclick='openInstructions()'/> <input type='submit' value='Maze Solver' onclick='solveMaze()'/> <input type='submit' value='Create Maze' onclick='createMaze()'/> <input type='submit' value='Save Maze' onclick='saveMaze()' style='margin-left:40px'/> <input type='submit' value='Load Maze' onclick='loadMaze()'/>"
 
 mazeSOLVER = "Starting location: <input type='submit' value='Beginning' onclick='startMaze()'/> <input type='submit' value='Custom Location' onclick='startCustom()'/> <input type='submit' value='Create Maze' onclick='createMaze()' style='margin-left: 20px;'/> "
 
@@ -54,6 +55,26 @@ turningHTML = "Actions: "
 
 //The location element is declared here as a global variable.
 var spot = []; 
+
+var newWindow;
+
+function openInstructions()
+{
+    var winTop = (screen.height / 2) - (3 * screen.height / 7);
+    var winLeft = (screen.width / 2) - (3 * screen.width / 7);
+    var windowFeatures = "width=770,height=570,scrollbars=yes,";
+    windowFeatures = windowFeatures + "left=" + winLeft + ",";
+    windowFeatures = windowFeatures + "top=" + winTop;
+    newWindow = window.open("Instructions.html", "Instructions", windowFeatures);
+}
+
+function window_onunload()
+{
+    if (typeof (newWindow) != "undefined" && newWindow.closed == false)
+    {
+        newWindow.close();
+    }
+}
 
 
 //a few housekeeping items that need to happen
@@ -792,12 +813,48 @@ function obstacleHandler(stop_obstacle)
     {
         if(directions.includes("left"))
         {
-            actionBar.innerHTML += " <input type='submit' value='Turn Left' onclick='turnLeft()'/>"
+          /*  actionBar.innerHTML += " <input type='submit' value='Turn Left' onclick='turnLeft()'/>" */
+          
+          //I added this to make the maze a little less disorienting.
+          switch(spot[2])
+          {
+            case "up":
+                actionBar.innerHTML += " <input type='submit' value='Go Right' onclick='turnRight()'/>"
+                break;
+            case "down":
+                actionBar.innerHTML += " <input type='submit' value='Go Left' onclick='turnRight()'/>"
+                break;
+            case "right":
+                actionBar.innerHTML += " <input type='submit' value='Go Down' onclick='turnRight()'/>"
+                break;
+            case "left":
+                actionBar.innerHTML += " <input type='submit' value='Go Up' onclick='turnRight()'/>"
+                break;
+          }
+          
         }
 
         if(directions.includes("right"))
         {
-            actionBar.innerHTML += " <input type='submit' value='Turn Right' onclick='turnRight()'/>"
+          /*  actionBar.innerHTML += " <input type='submit' value='Turn Right' onclick='turnRight()'/>" */
+          
+          //I added this to make the maze a little less disorienting.
+          switch(spot[2])
+          {
+            case "up":
+                actionBar.innerHTML += " <input type='submit' value='Go Left' onclick='turnLeft()'/>"
+                break;
+            case "down":
+                actionBar.innerHTML += " <input type='submit' value='Go Right' onclick='turnLeft()'/>"
+                break;
+            case "right":
+                actionBar.innerHTML += " <input type='submit' value='Go Up' onclick='turnLeft()'/>"
+                break;
+            case "left":
+                actionBar.innerHTML += " <input type='submit' value='Go Down' onclick='turnLeft()'/>"
+                break;
+          }
+          
         }
     }
     
@@ -1118,7 +1175,7 @@ function slowDown()
 
 function loadMaze()
 {
-    document.getElementById("action").innerHTML = "File Options: <input type='file' accept='text/plain' onchange='getFile(event)' id='files' name='files[]' style='width: 75px;'/> <input type='submit' value='Cancel'  onclick='document.getElementById(\"action\").innerHTML = startingHTML;'/>"
+    document.getElementById("action").innerHTML = "File Options: <input type='file' accept='text/plain' onchange='getFile(event)' id='files' name='files[]' style='width: 75px;'/> <input type='submit' value='Cancel'  onclick='document.getElementById(\"action\").innerHTML = startingHTML;'/> <input type='submit' value='Load Sample'  onclick='loadSample()' style='margin-left:20px;'/>"
 }
 
 function getFile(event)
@@ -1179,6 +1236,14 @@ function processFile(contents)
     drawGrid()
 }
 
+function loadSample()
+{
+    document.getElementById('action').innerHTML = startingHTML;
+    
+    var sampleMaze = "X_GRIDS=22 Y_GRIDS=25 type=begin orient=horizontal x=1 y=24 type=wall orient=vertical x=1 y=23 type=wall orient=vertical x=2 y=23 type=permeable orient=horizontal x=1 y=20 type=wall orient=vertical x=1 y=14 type=wall orient=horizontal x=1 y=14 type=permeable orient=horizontal x=5 y=14 type=permeable orient=vertical x=6 y=14 type=wall orient=vertical x=5 y=22 type=wall orient=horizontal x=5 y=23 type=wall orient=vertical x=5 y=21 type=wall orient=horizontal x=10 y=22 type=wall orient=horizontal x=15 y=23 type=wall orient=vertical x=16 y=22 type=wall orient=vertical x=16 y=23 type=wall orient=vertical x=17 y=23 type=end orient=horizontal x=16 y=24 type=wall orient=horizontal x=17 y=22 type=wall orient=vertical x=18 y=21 type=wall orient=vertical x=18 y=20 type=wall orient=vertical x=11 y=14 type=wall orient=horizontal x=1 y=11 type=wall orient=vertical x=1 y=10 type=permeable orient=vertical x=1 y=6 type=permeable orient=vertical x=7 y=6 type=wall orient=vertical x=7 y=8 type=wall orient=horizontal x=7 y=9 type=wall orient=horizontal x=10 y=9 type=wall orient=vertical x=11 y=8 type=wall orient=vertical x=11 y=4 type=wall orient=horizontal x=10 y=4 type=wall orient=horizontal x=7 y=4 type=wall orient=vertical x=7 y=4 type=wall orient=vertical x=14 y=7 type=wall orient=horizontal x=14 y=7 type=wall orient=horizontal x=15 y=6 type=wall orient=vertical x=17 y=9 type=wall orient=horizontal x=17 y=9 type=wall orient=horizontal x=16 y=10 type=wall orient=vertical x=16 y=10 type=wall orient=horizontal x=14 y=20 type=wall orient=vertical x=15 y=19 type=wall orient=horizontal x=20 y=7 type=wall orient=vertical x=21 y=7 type=wall orient=horizontal x=20 y=11 type=wall orient=vertical x=21 y=10";
+
+    processFile(sampleMaze);
+}
 
 function saveMaze()
 {
@@ -1210,7 +1275,7 @@ function outputFile()
 
 </script>
 </head>
-<body onload="setPage();">
+<body onload="setPage();" onunload="window_onunload()">
     <div id="action"></div> <br/><br/>
 
     <div id="rotate">
