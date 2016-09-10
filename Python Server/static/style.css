@@ -1,0 +1,23 @@
+#rotate {
+    transform:rotate(-90deg);
+    width: 473px;
+    margin: 70px 0px 0px -225px;
+    position:fixed;
+}
+
+#action {
+    border:solid brown;
+    padding:5px; 
+    margin-left:25px;
+    display:inline-block;
+    position:fixed;
+    height:20px;
+}
+
+#canvas {
+    /*margin-top: -120px; 
+      not necessary if #rotate has value position:fixed */
+    margin-top: 5px;
+    margin-left: 25px;
+    float:left;
+}

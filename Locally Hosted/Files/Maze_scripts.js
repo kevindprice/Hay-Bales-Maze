@@ -92,7 +92,7 @@ var obstacles = []; //contains a list of all obstacles.
                         //   "y":     <y-coordinate of origin> }
 
 //All of the different possible buttons for the action bar
-startingHTML = "Actions: <input type='submit' value='Instructions' onclick='openInstructions()'/> <input type='submit' value='Maze Solver' onclick='solveMaze()'/> <input type='submit' value='Create Maze' onclick='createMaze()'/> <input type='submit' value='Save Maze' onclick='saveMaze()' style='margin-left:40px'/> <input type='submit' value='Load Maze' onclick='loadMaze()'/>"
+startingHTML = "Actions: <input type='submit' value='Instructions' onclick='openInstructions()'/> <input type='submit' value='Maze Solver' onclick='solveMaze()'/> <input type='submit' value='Create Maze' onclick='createMaze()'/> <input type='submit' value='Save Maze' onclick='saveMaze()' style='margin-left:30px'/> <input type='submit' value='Load Maze' onclick='loadMaze()'/>"
 
 mazeSOLVER = "Starting location: <input type='submit' value='Beginning' onclick='startMaze()'/> <input type='submit' value='Custom Location' onclick='startCustom()'/> <input type='submit' value='Create Maze' onclick='createMaze()' style='margin-left: 20px;'/> "
 
@@ -102,7 +102,7 @@ createMAZE = "<input type='submit' value='Change Grid Size' onclick='changeGridS
 
 movingHTML = "Actions: <input type='submit' value='Stop the Maze' onclick='stopMaze()'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()'/>"
 
-pausedHTML = "Actions: <input type='submit' value='Resume the Maze' onclick='resumeMaze()'/> <input type='submit' value='Restart the Maze' onclick='startMaze()'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()'/>"
+pausedHTML = "<input type='submit' value='Resume the Maze' onclick='resumeMaze()' style='margin-right:10px'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()' style='margin-right:10px'/> Go to:<input type='submit' value='Beginning' onclick='startMaze()'/> <input type='submit' value='Custom Location' onclick='startCustom()'/>"
 
 turningHTML = "Actions: "
 
@@ -489,9 +489,11 @@ function clickHandler(event) {
 //Then, it takes the location from the click handler.
 //Finally, it asks for what direction to start in and
 //passes the vector to resumeMaze().
-function startCustom(x=-1, y=-1, direction = "")
-{
-    if(x == -1 && direction == "") //if the user hasn't clicked yet...
+function startCustom(x,y,direction) //=-1, y=-1, direction = "")
+{               //changing this allowed the script to work in 
+    if(x==null)                                 //edge browser
+    { x=-1; y=-1 }
+    if(x == -1 && direction == null) //if the user hasn't clicked yet...
     {
         spot[3]="startCustom"
         
@@ -523,6 +525,7 @@ function startCustom(x=-1, y=-1, direction = "")
 
 function createMaze()
 {
+    drawGrid();
     document.getElementById("action").innerHTML = createMAZE;
     spot[3]="drawing";  //necessary so the click handler knows
                         //you're in the draw setting.
@@ -624,7 +627,7 @@ function startMaze()
     beginObstacle = findBegin()
     if(beginObstacle == -1)
     {
-        alert("A beginning location has not been placed yet!\n\nGo to the Create Maze page and place the maze beginning.\nThe maze will start upwards from that location.")
+        alert("A beginning location has not been placed yet!\n\nGo to the Create Maze page (Main Menu-->Maze Creator) and place the maze beginning. The maze will start upwards from that location. Go to the Instructions page (Main Menu-->Instructions) for more information.")
     } else
     {
         //set the action bar to say "Start the Maze"
@@ -1262,7 +1265,7 @@ function slowDown()
 
 function loadMaze()
 {
-    document.getElementById("action").innerHTML = "File Options: <input type='file' accept='text/plain' onchange='getFile(event)' id='files' name='files[]' style='width: 75px;'/> <input type='submit' value='Cancel'  onclick='document.getElementById(\"action\").innerHTML = startingHTML;'/> <input type='submit' value='Load Sample'  onclick='loadSample()' style='margin-left:20px;'/>"
+    document.getElementById("action").innerHTML = "File Options: <input type='file' accept='text/plain' onchange='getFile(event)' id='files' name='files[]' style='width: 80px;'/> <input type='submit' value='Cancel'  onclick='document.getElementById(\"action\").innerHTML = startingHTML;'/> <input type='submit' value='Load Sample'  onclick='loadSample()' style='margin-left:20px;'/>"
 }
 
 function getFile(event)

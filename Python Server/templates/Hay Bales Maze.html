@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8 />
+    <title id="title">Hay Bales Maze       </title>
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <script type="text/javascript" src="{{ url_for('static', filename='FileSaver.js') }}">
+    </script>
+    <script type="text/javascript" src="{{ url_for('static', filename='Maze_scripts.js') }}">
+
+</script>
+</head>
+<body onload="setPage();" onunload="window_onunload()">
+    <div id="action"></div> <br/><br/>
+
+    <div id="rotate">
+        <input type="submit" value="Zoom In" onclick="zoomIn()"/>
+        <input type="submit" value="Zoom Out" onclick="zoomOut()"/>
+        <input type="submit" value="Refresh" onclick="drawGrid()"/>
+        <input type="submit" value="Main Menu" onclick="document.getElementById('action').innerHTML = startingHTML;"/>
+    </div>
+    <canvas id="canvas" onclick="clickHandler(event);"></canvas>
+</body>
+</html>
