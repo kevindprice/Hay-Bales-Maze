@@ -1,3 +1,15 @@
+h3 {
+    margin:-4px 0px 0px 25px;
+    padding: 0px 0px 0px 30px;
+    font-family:'Lucida Sans Unicode',Garamond;
+    color:#ff4400;
+    font-size:16pt;
+    background-color:#ccffff;
+    border-radius:5px;
+    width:510px;
+
+}
+
 #rotate {
     transform:rotate(-90deg);
     width: 473px;

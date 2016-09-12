@@ -92,7 +92,7 @@ var obstacles = []; //contains a list of all obstacles.
                         //   "y":     <y-coordinate of origin> }
 
 //All of the different possible buttons for the action bar
-startingHTML = "Actions: <input type='submit' value='Instructions' onclick='openInstructions()'/> <input type='submit' value='Maze Solver' onclick='solveMaze()'/> <input type='submit' value='Create Maze' onclick='createMaze()'/> <input type='submit' value='Save Maze' onclick='saveMaze()' style='margin-left:30px'/> <input type='submit' value='Load Maze' onclick='loadMaze()'/>"
+startingHTML = "Actions: <input type='submit' value='How to Play' onclick='openInstructions()' style='font-weight:bold;'/> <input type='submit' value='Maze Solver' onclick='solveMaze()'/> <input type='submit' value='Create Maze' onclick='createMaze()'/> <input type='submit' value='Save Maze' onclick='saveMaze()' style='margin-left:30px'/> <input type='submit' value='Load Maze' onclick='loadMaze()'/>"
 
 mazeSOLVER = "Starting location: <input type='submit' value='Beginning' onclick='startMaze()'/> <input type='submit' value='Custom Location' onclick='startCustom()'/> <input type='submit' value='Create Maze' onclick='createMaze()' style='margin-left: 20px;'/> "
 
