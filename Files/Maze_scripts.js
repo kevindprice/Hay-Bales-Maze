@@ -123,6 +123,10 @@ var spot = []; //keep track of the user's location in the maze
 
 var route = []; //keep track of the route the user took
 
+var turns = {}; //keep track of what keys to look for when turning.
+
+//document.onkeydown = checkKey;
+
 var newWindow;
 
 //These functions run at the beginning of the program,
@@ -530,6 +534,87 @@ function isIn(list, item)
 //============================================================
 //============================================================
 
+
+//checks the ARROW KEYS to tell the computer what to do at a stop.
+//function checkKey(e) {
+document.onkeydown = function(e) {
+    e = e || window.event;
+
+    if (e.keyCode == '38') {
+        // up arrow
+        switch(turns["upkey"])
+        {
+            case "forward":
+                moveForward();
+                break;
+            case "backward":
+                turnBackward();
+                break;
+            case "right":
+                turnRight();
+                break;
+            case "left":
+                turnLeft();
+                break;
+        }        
+    }
+    else if (e.keyCode == '40') {
+        // down arrow
+        switch(turns["downkey"])
+        {
+            case "forward":
+                moveForward();
+                break;
+            case "backward":
+                turnBackward();
+                break;
+            case "right":
+                turnRight();
+                break;
+            case "left":
+                turnLeft();
+                break;
+        }        
+    }
+    else if (e.keyCode == '37') {
+       // left arrow
+        switch(turns["leftkey"])
+        {
+            case "forward":
+                moveForward();
+                break;
+            case "backward":
+                turnBackward();
+                break;
+            case "right":
+                turnRight();
+                break;
+            case "left":
+                turnLeft();
+                break;
+        }        
+    }
+    else if (e.keyCode == '39') {
+       // right arrow
+        switch(turns["rightkey"])
+        {
+            case "forward":
+                moveForward();
+                break;
+            case "backward":
+                turnBackward();
+                break;
+            case "right":
+                turnRight();
+                break;
+            case "left":
+                turnLeft();
+                break;
+        }        
+    }
+}
+
+
 //This function handles what to do when you click on the canvas.
 function clickHandler(event) {
     //get canvas
@@ -725,6 +810,7 @@ function stopMaze()
 function resumeMaze()
 {
     spot[3] = "moving";
+    turns = [];
     document.getElementById("action").innerHTML = movingHTML;
     move();
 }
@@ -1107,90 +1193,117 @@ function obstacleHandler(stop_obstacle, checkNumber)  //checkNumber =
     {   //switch case for your direction when you stopped.
         case "up":  //we KNOW there is an obstacle on TOP.
             if( stop_obstacle["type"] == "permeable" )
-            { directions.push("forward") }
+            { directions.push("forward")
+              turns["upkey"] = "forward"  }
             
             if( isIn(sides, "left") &&
                 isIn(sides, "right") )
-            { directions.push("backward") }
+            { directions.push("backward") 
+              turns["downkey"] = "backward" }
 
             if( isIn(sides, "left") &&
                 !isIn(sides, "right") )
-            { directions.push("right") }
+            { directions.push("right") 
+              turns["rightkey"] = "right" }
             
             if( !isIn(sides, "left") &&
                 isIn(sides, "right") )
-            { directions.push("left") }
+            { directions.push("left")
+              turns["leftkey"] = "left" }
             
             if( !isIn(sides, "right") &&
                 !isIn(sides, "left") )
             { directions.push("right")
-              directions.push("left") }
-            break
+              directions.push("left") 
+              turns["rightkey"] = "right"
+              turns["leftkey"] = "left" }
+
+            break;
 
         case "down":  //we KNOW there is an obstacle BELOW.
             if( stop_obstacle["type"] == "permeable" )
-            { directions.push("forward") }
+            { directions.push("forward") 
+              turns["downkey"] = "forward" }
             
             if( isIn(sides, "left") &&
                 isIn(sides, "right") )
-            { directions.push("backward") }
+            { directions.push("backward")
+              turns["upkey"] = "backward" }
 
             if( isIn(sides, "left") &&
                 !isIn(sides, "right") )
-            { directions.push("left") } //left and right are swapped
+            { directions.push("left") 
+              turns["rightkey"] = "left" }
+                                        //left and right are swapped
                                         //when moving down
             if( !isIn(sides, "left") &&
                 isIn(sides, "right") )
-            { directions.push("right") } //left and right are swapped
+            { directions.push("right") 
+              turns["leftkey"] = "right" }
+                                        //left and right are swapped
                                         //when moving down
             if( !isIn(sides, "right") &&
                 !isIn(sides, "left") )
             { directions.push("right")
-              directions.push("left") }
+              directions.push("left") 
+              turns["leftkey"] = "right"
+              turns["rightkey"] = "left" }
             break;
 
         case "right": //we KNOW there is an obstacle TO THE RIGHT.
             if( stop_obstacle["type"] == "permeable" )
-            { directions.push("forward") }
+            { directions.push("forward")
+              turns["rightkey"] = "forward" }
             
             if( isIn(sides, "top") &&
                 isIn(sides, "bottom") )
-            { directions.push("backward") }
+            { directions.push("backward") 
+              turns["leftkey"] = "backward" }
 
             if( isIn(sides, "top") &&
                 !isIn(sides, "bottom") )
-            { directions.push("right") }
+            { directions.push("right") 
+              turns["downkey"] = "right" }
 
             if( !isIn(sides, "top") &&
                 isIn(sides, "bottom") )
-            { directions.push("left") }
+            { directions.push("left") 
+              turns["upkey"] = "left" }
 
             if( !isIn(sides, "top") &&
                 !isIn(sides, "bottom") )
             { directions.push("right")
-              directions.push("left") }
+              directions.push("left") 
+              turns["downkey"] = "right"
+              turns["upkey"] = "left" }
             break;
 
         case "left": //we KNOW there is an obstacle TO THE LEFT.
             if( stop_obstacle["type"] == "permeable" )
-            { directions.push("forward") }
+            { directions.push("forward")
+              turns["leftkey"] = "forward" }
             
             if( isIn(sides, "top") &&
                 isIn(sides, "bottom") )
-            { directions.push("backward") }
+            { directions.push("backward")
+              turns["rightkey"] = "backward" }
 
             if( isIn(sides, "top") &&
                 !isIn(sides, "bottom") )
-            { directions.push("left") }
+            { directions.push("left")
+              turns["downkey"] = "left" }
 
             if( !isIn(sides, "top") &&
                 isIn(sides, "bottom") )
-            { directions.push("right") }
+            { directions.push("right") 
+              turns["upkey"] = "right" }
 
             if( !isIn(sides, "top") &&
                 !isIn(sides, "bottom") )
             { directions.push("right")
-              directions.push("left") }
+              directions.push("left")
+              turns["upkey"] = "right"
+              turns["downkey"] = "left" }
             break;
     }
     
