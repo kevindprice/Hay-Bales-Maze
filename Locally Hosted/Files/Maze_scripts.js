@@ -107,7 +107,7 @@ createMAZE = "<input type='submit' value='Grid Size' onclick='changeGridSize()'/
 
 movingHTML = "Actions: <input type='submit' value='Stop the Maze' onclick='stopMaze()'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()'/>"
 
-pausedHTML = "<input type='submit' value='Resume the Maze' onclick='resumeMaze()' style='margin-right:10px'/> <input type='submit' value='Backtrack' onclick='backTrack()' style='margin-right:10px'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()' style='margin-right:10px'/> Go to:<input type='submit' value='Beginning' onclick='startMaze()'/> <input type='submit' value='Custom Spot' onclick='startCustom()'/>"
+pausedHTML = "<input type='submit' value='Resume Maze' onclick='resumeMaze()'/> <input type='submit' value='Backtrack' onclick='backTrack()' style='margin-right:10px'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()' style='margin-right:10px'/> Go to:<input type='submit' value='Beginning' onclick='startMaze()'/> <input type='submit' value='Custom Spot' onclick='startCustom()'/>"
 
 turningHTML = "Actions: "
 
@@ -593,6 +593,7 @@ function startCustom(x,y,direction) //=-1, y=-1, direction = "")
         var tempSpot = [];
         tempSpot[0] = spot[0];
         tempSpot[1] = spot[1];
+        tempSpot[2] = spot[2];
         route.push( {"spot":tempSpot, "obstacle":"Start"} );
         
         resumeMaze()
@@ -730,8 +731,8 @@ function startMaze()
         var tempSpot = [];
         tempSpot[0] = spot[0];
         tempSpot[1] = spot[1];
-
-        route.push( {"spot":tempSpot, "obstacle":"Start"} );
+        tempSpot[2] = spot[2];
+        route.push( {"spot":tempSpot, "obstacle":obstacles[beginObstacle]} );
 
         drawGrid(); //to erase the line that's already there. Refresh.
         move();
@@ -1040,12 +1041,16 @@ function obstacleHandler(stop_obstacle, checkNumber)  //checkNumber =
                 //do this BEFORE adding the last obstacle
                 //so the line refresh can make the last segment
                 //in a darker color.
-                
-    var tempSpot = [];
-    tempSpot[0] = spot[0];
-    tempSpot[1] = spot[1];
 
-    route.push( {"spot":tempSpot, "obstacle":stop_obstacle} );
+    if(checkNumber != 1)
+    {       //add the next stop point to the route[] list.
+        var tempSpot = [];
+        tempSpot[0] = spot[0];
+        tempSpot[1] = spot[1];
+        tempSpot[2] = spot[2];
+        route.push( {"spot":tempSpot, "obstacle":stop_obstacle} );
+
+    }    
     
     var sides = [];  //will be populated with which sides
                      //of the square have obstacles in them
@@ -1376,34 +1381,77 @@ function backTrack()
 {
     var tempVar = route.pop();
 
-    //If the user PAUSED the maze and clicked back track,
-    //go back to the last obstacle and choose again.
-    if( spot[0]!=route[route.length - 1]["spot"][0] && 
-        spot[1]!=route[route.length - 1]["spot"][1] )
-    {
-        spot[0] = tempVar["spot"][0]
-        spot[1] = tempVar["spot"][1]
-    }
-    else  //if you are AT an obstacle, go another obstacle previous.
+    //if you are AT an obstacle, go another obstacle previous.
+    //Otherwise, just go to the final obstacle.
+    if( spot[0]==tempVar["spot"][0] && 
+        spot[1]==tempVar["spot"][1] )
     {
         tempVar = route.pop();
-        spot[0] = tempVar["spot"][0]
-        spot[1] = tempVar["spot"][1]
     }
+
+    spot[0] = tempVar["spot"][0]
+    spot[1] = tempVar["spot"][1]
+    spot[2] = tempVar["spot"][2]
+    
+    var directionsCheck = obstacleHandler( tempVar["obstacle"], 1 );
     
     //if there is only one direction available,
     //keep going backward until there is a choice.
-    while( obstacleHandler( obstacleHandler( tempVar["obstacle"], 1 ) == 1 ) )
+    while( directionsCheck == 1 ) 
     {                                   
         tempVar = route.pop();
         spot[0] = tempVar["spot"][0]
         spot[1] = tempVar["spot"][1]
+        spot[2] = tempVar["spot"][2]
 
-        if( tempVar["obstacle"]["type"] == "begin" )
-        { break; }
+        if( tempVar["obstacle"]["type"]=="begin" )
+        { 
+            startMaze();
+            return; 
+        }
+        if( tempVar["obstacle"]=="Start" )
+        {
+            //have to repopulate the route[] with the custom starting spot.
+            route = []
+        
+            var tempSpot = [];
+            tempSpot[0] = spot[0];
+            tempSpot[1] = spot[1];
+            tempSpot[2] = spot[2];
+            route.push( {"spot":tempSpot, "obstacle":"Start"} );
+            
+            resumeMaze();
+            return;
+        }
+
+        var directionsCheck = obstacleHandler( tempVar["obstacle"], 1 );
     }
+
+    //there are TWO ways the backtrack could approach the begin: in the above loop,
+    //or also after another obstacle. So I have to put this segment in twice.
+    if( tempVar["obstacle"]["type"]=="begin" )
+    { 
+        startMaze();
+        return; 
+    }
+    if( tempVar["obstacle"]=="Start" )
+    {
+        //have to repopulate the route[] with the custom starting spot.
+        route = []
+        
+        var tempSpot = [];
+        tempSpot[0] = spot[0];
+        tempSpot[1] = spot[1];
+        tempSpot[2] = spot[2];
+        route.push( {"spot":tempSpot, "obstacle":"Start"} );
+           
+        resumeMaze();
+        return;
+    }
+    
     drawGrid();
     obstacleHandler( tempVar["obstacle"] );
+    
 }
 
 
