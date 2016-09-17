@@ -7,6 +7,7 @@ the function definitions themselves.
 
 Global variable definitions
 
+cancel_button
 setPage
 animate_string
 
@@ -40,6 +41,7 @@ turnRight
 turnLeft
 moveForward
 turnBackward
+backTrack
 
 zoomIn
 zoomOut
@@ -50,6 +52,8 @@ loadMaze
 getFile
 processFile
 loadSample
+sample1
+sample2
 saveMaze
 outputFile
 
@@ -91,22 +95,32 @@ var obstacles = []; //contains a list of all obstacles.
                         //   "x":     <x-coordinate of origin>
                         //   "y":     <y-coordinate of origin> }
 
+loadHTML = "<input type='submit' value='How to Play' onclick='openInstructions()' style='font-weight:bold;'/> <input type='submit' value='Load Sample'  style='font-weight:bold;' onclick='loadSample()' style='margin-left:20px;'/> <input type='submit' value='Create New Maze' onclick='createMaze()'> <input type='submit' value='Load from File' onclick='loadMaze()' />   "
+                        
 //All of the different possible buttons for the action bar
-startingHTML = "Actions: <input type='submit' value='Instructions' onclick='openInstructions()'/> <input type='submit' value='Maze Solver' onclick='solveMaze()'/> <input type='submit' value='Create Maze' onclick='createMaze()'/> <input type='submit' value='Save Maze' onclick='saveMaze()' style='margin-left:30px'/> <input type='submit' value='Load Maze' onclick='loadMaze()'/>"
+startingHTML = "Actions: <input type='submit' value='How to Play' onclick='openInstructions()' style='font-weight:bold;'/> <input type='submit' value='Solve Maze' style='font-weight:bold;' onclick='solveMaze()'/> <input type='submit' value='Add Obstacles' onclick='createMaze()'/> <input type='submit' value='Load Maze' onclick='loadMaze()'/>"
 
-mazeSOLVER = "Starting location: <input type='submit' value='Beginning' onclick='startMaze()'/> <input type='submit' value='Custom Location' onclick='startCustom()'/> <input type='submit' value='Create Maze' onclick='createMaze()' style='margin-left: 20px;'/> "
+mazeSOLVER = "Starting location: <input type='submit' value='Beginning' style='font-weight:bold;' onclick='startMaze()'/> <input type='submit' value='Custom Spot' onclick='startCustom()'/> <input type='submit' value='Add Obstacles' onclick='createMaze()' style='margin-left: 20px;'/> "
 
 //<input type='submit' value='Return to Solver' onclick='solveMaze()'/> 
 
-createMAZE = "<input type='submit' value='Change Grid Size' onclick='changeGridSize()'/> <input type='submit' value='Erase All' onclick='eraseMaze()' style='margin-right: 15px;'/> Draw: <input type='submit' value='Wall' onclick='drawSetting(\"wall\")'/> <input type='submit' value='Permeable' onclick='drawSetting(\"permeable\")'/> <input type='submit' value='Beginning' onclick='drawSetting(\"begin\")'/> <input type='submit' value='End' onclick='drawSetting(\"end\")'/>"
+createMAZE = "<input type='submit' value='Grid Size' onclick='changeGridSize()'/> <input type='submit' value='Erase All' onclick='eraseMaze()'/> <input type='submit' value='Save' onclick='saveMaze()'/> <input type='submit' value='SOLVE' onclick='solveMaze()' style='margin-right: 10px;'/>Draw: <input type='submit' value='Wall' onclick='drawSetting(\"wall\")'/> <input type='submit' value='Permeable' onclick='drawSetting(\"permeable\")'/> <input type='submit' value='Beginning' onclick='drawSetting(\"begin\")'/> <input type='submit' value='End' onclick='drawSetting(\"end\")'/>"
 
 movingHTML = "Actions: <input type='submit' value='Stop the Maze' onclick='stopMaze()'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()'/>"
 
-pausedHTML = "<input type='submit' value='Resume the Maze' onclick='resumeMaze()' style='margin-right:10px'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()' style='margin-right:10px'/> Go to:<input type='submit' value='Beginning' onclick='startMaze()'/> <input type='submit' value='Custom Location' onclick='startCustom()'/>"
+pausedHTML = "<input type='submit' value='Resume Maze' onclick='resumeMaze()'/> <input type='submit' value='Backtrack' onclick='backTrack()' style='margin-right:10px'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()' style='margin-right:10px'/> Go to:<input type='submit' value='Beginning' onclick='startMaze()'/> <input type='submit' value='Custom Spot' onclick='startCustom()'/>"
 
 turningHTML = "Actions: "
 
-var spot = []; 
+var tempHTML = "";  //allows the CANCEL button to remember
+                    //where to cancel back to.
+
+var customSpot = []; //temporarily filled with the click location
+                    //when a user chooses to start from a custom spot.
+                    
+var spot = []; //keep track of the user's location in the maze
+
+var route = []; //keep track of the route the user took
 
 var newWindow;
 
@@ -115,12 +129,26 @@ var newWindow;
 //================================================================
 //================================================================
 
+function cancel_button()  //I confess, the implementation of this
+{                         //is a bit sloppy.
+    if(tempHTML != "")
+    {
+        document.getElementById("action").innerHTML = tempHTML;
+        tempHTML = "";        
+    }
+    else
+    {
+        document.getElementById("action") = startingHTML;
+    }
+}
+
+
 //a few housekeeping items that need to happen
 //right when the page is loaded.
 function setPage()
 {
     //set the action bar to say "Start the Maze"
-    document.getElementById("action").innerHTML = startingHTML;
+    document.getElementById("action").innerHTML = loadHTML;
 
     //the canvas needs to be set to the right size
     //before the spot is initialized, or it will misbehave.
@@ -141,6 +169,7 @@ function setPage()
 
     animate_string('title');
     drawGrid();
+    //loadSample();
 }
 
 //animates the title
@@ -189,6 +218,39 @@ function drawGrid()
     context.stroke(); 
 
     refreshObstacles(canvas, context);
+    
+    if(route.length>0)
+    {
+        refreshRoute(canvas, context);
+    }
+}
+
+function refreshRoute(canvas, context)
+{
+    context.beginPath();
+    context.strokeStyle="#00FF00"; //green
+
+    context.moveTo( Math.round( route[0]["spot"][0]*INTERVAL + INTERVAL/2), 
+                    Math.round( route[0]["spot"][1]*INTERVAL + INTERVAL/2) ); 
+    
+    for(var i=1; i<route.length; i++)
+    {
+        context.lineTo(Math.round( route[i]["spot"][0]*INTERVAL + INTERVAL/2), 
+                       Math.round( route[i]["spot"][1]*INTERVAL + INTERVAL/2) );
+    }
+
+    context.stroke();
+
+    context.beginPath(); //draw the LAST SEGMENT in a darker color.
+    context.strokeStyle="#006600"; //DARK green
+    
+    context.moveTo(Math.round( route[route.length - 1]["spot"][0]*INTERVAL + INTERVAL/2), 
+                   Math.round( route[route.length - 1]["spot"][1]*INTERVAL + INTERVAL/2) );
+    context.lineTo(Math.round( spot[0]*INTERVAL + INTERVAL/2), 
+                   Math.round( spot[1]*INTERVAL + INTERVAL/2) );
+    
+    context.stroke()
+    
 }
 
 //after drawing the grid, you have to refresh the obstacles.
@@ -386,7 +448,7 @@ function drawObstacle(obstacle)
     }
 
     //sets up the context...
-    canvas = document.getElementById("canvas");
+    var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d");
     
     switch(OBSTACLE_TYPE)
@@ -455,7 +517,7 @@ function findBegin()
 //This function handles what to do when you click on the canvas.
 function clickHandler(event) {
     //get canvas
-    canvas = document.getElementById("canvas");
+    var canvas = document.getElementById("canvas");
 
     //now find coordinates of the click relative to the canvas.
 
@@ -478,6 +540,8 @@ function clickHandler(event) {
             startCustom(x, y);
             break;
         default:
+            startCustom(x, y);
+            break;
     }    
 }
 
@@ -496,7 +560,9 @@ function startCustom(x,y,direction) //=-1, y=-1, direction = "")
     if(x == -1 && direction == null) //if the user hasn't clicked yet...
     {
         spot[3]="startCustom"
-        
+
+        tempHTML = document.getElementById("action").innerHTML;
+
         document.getElementById("action").innerHTML = "Please click where you would like to start."
     }
     else if(x != -1)
@@ -506,14 +572,31 @@ function startCustom(x,y,direction) //=-1, y=-1, direction = "")
         while(y % INTERVAL != 0)
         {y--;}
  
-        spot[0] = x / INTERVAL;
-        spot[1] = y / INTERVAL;
+        customSpot[0] = x / INTERVAL;
+        customSpot[1] = y / INTERVAL;
         
-        document.getElementById("action").innerHTML = "Start direction: <input type='submit' value='Up' onclick='startCustom(-1,-1,\"up\")'/> <input type='submit' value='Down' onclick='startCustom(-1,-1,\"down\")'/> <input type='submit' value='Right' onclick='startCustom(-1,-1,\"right\")'/> <input type='submit' value='Left' onclick='startCustom(-1,-1,\"left\")'/>"
+        if(tempHTML == "")
+        {
+            tempHTML = document.getElementById("action").innerHTML;
+        }
+        
+        document.getElementById("action").innerHTML = "Start here?  Starting direction: <input type='submit' value='Up' onclick='startCustom(-1,-1,\"up\")'/> <input type='submit' value='Down' onclick='startCustom(-1,-1,\"down\")'/> <input type='submit' value='Right' onclick='startCustom(-1,-1,\"right\")'/> <input type='submit' value='Left' onclick='startCustom(-1,-1,\"left\")'/> <input type='submit' value='Cancel' style='margin-left: 30px' onclick='cancel_button()' />"
     }
     else if(direction != "")
     {
+        tempHTML = "";
+        spot[0] = customSpot[0];
+        spot[1] = customSpot[1];
         spot[2]=direction;
+
+        route = []
+        
+        var tempSpot = [];
+        tempSpot[0] = spot[0];
+        tempSpot[1] = spot[1];
+        tempSpot[2] = spot[2];
+        route.push( {"spot":tempSpot, "obstacle":"Start"} );
+        
         resumeMaze()
     }
 }
@@ -525,6 +608,7 @@ function startCustom(x,y,direction) //=-1, y=-1, direction = "")
 
 function createMaze()
 {
+    route = [];
     drawGrid();
     document.getElementById("action").innerHTML = createMAZE;
     spot[3]="drawing";  //necessary so the click handler knows
@@ -556,39 +640,47 @@ function eraseMaze()
 }
 
 
-function changeGridSize()
+function changeGridSize(horizontal, vertical)
 {
-    var input_value = "Hi";
-    while(isNaN(input_value))
+    if(horizontal==null)
     {
-        input_value=Number(prompt("How many horizontal grids would you like?", X_GRIDS))
+        tempHTML = document.getElementById("action").innerHTML
+        document.getElementById("action").innerHTML = "(10 < x < 200) Horizontal Grids: <input type='text' id='horizontal' style='width:40px; margin-left: 5px; margin-right: 20px;'/> Vertical Grids: <input type='text' id='vertical' style='width:40px; margin-left: 5px;'/> <input type='submit' value='OK' onclick='changeGridSize( document.getElementById(\"horizontal\").value, document.getElementById(\"vertical\").value )'/>"
+        
+        document.getElementById("horizontal").value = X_GRIDS;
+        document.getElementById("vertical").value = Y_GRIDS;
+        
     }
-    
-    if(input_value > 200)
-    { input_value = 200; } 
-    else if(input_value < 5)
-    { input_value = 5; }
-
-    X_GRIDS = Math.round(input_value);
-
-    input_value = "Hi";
-    while(isNaN(input_value))
+    else
     {
-        input_value=Number(prompt("How many vertical grids would you like?", Y_GRIDS))
+        horizontal = Number(horizontal)
+        vertical = Number(vertical)
+        
+        if(!isNaN(horizontal) && !isNaN(vertical) 
+            && horizontal < 201 && horizontal > 9
+            && vertical < 201 && vertical > 9 )
+        {
+            /* if(horizontal > 200)
+            { horizontal = 200; } 
+            else if(horizontal < 5)
+            { horizontal = 5; }
+
+            if(vertical > 200)
+            { vertical = 200; } 
+            else if(vertical < 5)
+            { vertical = 5; } */
+
+            X_GRIDS = Math.round(horizontal);
+            Y_GRIDS = Math.round(vertical);
+
+            CANVAS_WIDTH = INTERVAL * X_GRIDS;
+            CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
+            
+            drawGrid();
+            
+            cancel_button()
+        }   
     }
-    
-    if(input_value > 200)
-    { input_value = 200; } 
-    else if(input_value < 5)
-    { input_value = 5; }
-
-    Y_GRIDS = Math.round(input_value);
-
-    CANVAS_WIDTH = INTERVAL * X_GRIDS;
-    CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
-
-    
-    drawGrid();
 }
 
 
@@ -625,6 +717,8 @@ function resumeMaze()
 function startMaze()
 {
     beginObstacle = findBegin()
+    route = []
+
     if(beginObstacle == -1)
     {
         alert("A beginning location has not been placed yet!\n\nGo to the Create Maze page (Main Menu-->Maze Creator) and place the maze beginning. The maze will start upwards from that location. Go to the Instructions page (Main Menu-->Instructions) for more information.")
@@ -634,6 +728,13 @@ function startMaze()
         document.getElementById("action").innerHTML = movingHTML;
 
         spot = [ obstacles[beginObstacle]["x"], obstacles[beginObstacle]["y"] - 1/2 , "up", "moving"];
+
+        var tempSpot = [];
+        tempSpot[0] = spot[0];
+        tempSpot[1] = spot[1];
+        tempSpot[2] = spot[2];
+        route.push( {"spot":tempSpot, "obstacle":obstacles[beginObstacle]} );
+
         drawGrid(); //to erase the line that's already there. Refresh.
         move();
     }
@@ -645,7 +746,7 @@ function startMaze()
 //It stops after it arrives at the location of the next obstacle.
 function move()
 {
-    canvas = document.getElementById("canvas");
+    var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d");
  
     var pixelsSpot;
@@ -656,8 +757,8 @@ function move()
 
     //move the line on an interval
     var time_interval = setInterval(function() {
-        context.beginPath();
-        context.strokeStyle="#00FF00"; //green
+        context.beginPath();   //First draw a line in GREEN
+        context.strokeStyle="#007700"; //dark green
 
         context.moveTo( Math.round(spot[0]*INTERVAL + INTERVAL/2), 
                          Math.round(spot[1]*INTERVAL + INTERVAL/2) ); 
@@ -692,10 +793,50 @@ function move()
                         Math.round(spot[1]*INTERVAL + INTERVAL/2) );  
         context.stroke();
 
-        //Check for the next obstacle
+        //Decrease the distance to the next obstacle
         pixelsSpot = stop["dist"]*INTERVAL;
         pixelsSpot -= MOVEDIST;
         stop["dist"] = pixelsSpot / INTERVAL;
+
+        /*
+        //Now give the line a BLACK tip AHEAD of your spot.
+        context.beginPath();   
+        context.moveTo( Math.round(spot[0]*INTERVAL + INTERVAL/2), 
+                        Math.round(spot[1]*INTERVAL + INTERVAL/2) );  
+        context.strokeStyle="#000000";
+
+        var tip = []
+        tip[0]=spot[0]
+        tip[1]=spot[1]
+        
+        switch(spot[2])  //Add a BLACK tip 
+        {                //so you can better see the END.
+            case "up":
+                pixelsSpot = tip[1]*INTERVAL;
+                pixelsSpot -= MOVEDIST;
+                tip[1] = pixelsSpot / INTERVAL;
+                break;
+            case "down":
+                pixelsSpot = tip[1]*INTERVAL;
+                pixelsSpot += MOVEDIST;
+                tip[1] = pixelsSpot / INTERVAL;
+                break;
+            case "right":
+                pixelsSpot = tip[0]*INTERVAL;
+                pixelsSpot += MOVEDIST;
+                tip[0] = pixelsSpot / INTERVAL;
+                break;
+            case "left":
+                pixelsSpot = tip[0]*INTERVAL;
+                pixelsSpot -= MOVEDIST;
+                tip[0] = pixelsSpot / INTERVAL;
+                break;
+        }
+        
+        context.lineTo( Math.round(tip[0]*INTERVAL + INTERVAL/2), 
+                        Math.round(tip[1]*INTERVAL + INTERVAL/2) );  
+        context.stroke();
+        */
 
         if(spot[3] == "stopped")
         {
@@ -886,8 +1027,9 @@ function checkObstacles()
 
 
 //this function handles what to do when you hit an obstacle.
-function obstacleHandler(stop_obstacle)
-{
+function obstacleHandler(stop_obstacle, checkNumber)  //checkNumber = 
+                                                            //flag to use this function
+{                                                           //to check number of directions
     //just in case the interval is an odd number,
     //and you didn't land exactly on INTERVAL
     //this will fix that problem. :-)
@@ -895,6 +1037,21 @@ function obstacleHandler(stop_obstacle)
     spot[1]=Math.round(spot[1]);
 
     spot[3]="stopped";
+    
+    drawGrid(); //refresh the line so the corners look nice.
+                //do this BEFORE adding the last obstacle
+                //so the line refresh can make the last segment
+                //in a darker color.
+
+    if(checkNumber != 1)
+    {       //add the next stop point to the route[] list.
+        var tempSpot = [];
+        tempSpot[0] = spot[0];
+        tempSpot[1] = spot[1];
+        tempSpot[2] = spot[2];
+        route.push( {"spot":tempSpot, "obstacle":stop_obstacle} );
+
+    }    
     
     var sides = [];  //will be populated with which sides
                      //of the square have obstacles in them
@@ -1021,6 +1178,11 @@ function obstacleHandler(stop_obstacle)
             break;
     }
     
+    if(checkNumber == 1)    //flag to use this function
+    {                       //just to check number of directions.
+        return directions.length
+    }
+    
     //to simplify changing the action bar
     actionBar = document.getElementById("action");
     
@@ -1063,16 +1225,16 @@ function obstacleHandler(stop_obstacle)
           switch(spot[2])
           {
             case "up":
-                actionBar.innerHTML += " <input type='submit' value='Go Right' onclick='turnRight()'/>"
+                actionBar.innerHTML += " <input type='submit' value='Go Left' onclick='turnLeft()'/>"
                 break;
             case "down":
-                actionBar.innerHTML += " <input type='submit' value='Go Left' onclick='turnRight()'/>"
+                actionBar.innerHTML += " <input type='submit' value='Go Right' onclick='turnLeft()'/>"
                 break;
             case "right":
-                actionBar.innerHTML += " <input type='submit' value='Go Down' onclick='turnRight()'/>"
+                actionBar.innerHTML += " <input type='submit' value='Go Up' onclick='turnLeft()'/>"
                 break;
             case "left":
-                actionBar.innerHTML += " <input type='submit' value='Go Up' onclick='turnRight()'/>"
+                actionBar.innerHTML += " <input type='submit' value='Go Down' onclick='turnLeft()'/>"
                 break;
           }
           
@@ -1086,16 +1248,16 @@ function obstacleHandler(stop_obstacle)
           switch(spot[2])
           {
             case "up":
-                actionBar.innerHTML += " <input type='submit' value='Go Left' onclick='turnLeft()'/>"
+                actionBar.innerHTML += " <input type='submit' value='Go Right' onclick='turnRight()'/>"
                 break;
             case "down":
-                actionBar.innerHTML += " <input type='submit' value='Go Right' onclick='turnLeft()'/>"
+                actionBar.innerHTML += " <input type='submit' value='Go Left' onclick='turnRight()'/>"
                 break;
             case "right":
-                actionBar.innerHTML += " <input type='submit' value='Go Up' onclick='turnLeft()'/>"
+                actionBar.innerHTML += " <input type='submit' value='Go Down' onclick='turnRight()'/>"
                 break;
             case "left":
-                actionBar.innerHTML += " <input type='submit' value='Go Down' onclick='turnLeft()'/>"
+                actionBar.innerHTML += " <input type='submit' value='Go Up' onclick='turnRight()'/>"
                 break;
           }
           
@@ -1112,8 +1274,8 @@ function obstacleHandler(stop_obstacle)
         actionBar.innerHTML += " <input type='submit' value='Move Forward' onclick='moveForward()'/>"
     }
 
-    if(directions.length > 1 && !directions.includes("backward") )
-    {actionBar.innerHTML += "<input type='submit' value='Restart the Maze' onclick='startMaze()' style='margin-left: 15px;'/>" }
+    if(directions.length > 1 ) //&& !directions.includes("backward") )
+    {actionBar.innerHTML += "<input type='submit' value='Restart' onclick='startMaze()' style='margin-left: 15px;'/> <input type='submit' value='Custom Spot' onclick='startCustom()'/> <input type='submit' value='Backtrack' onclick='backTrack()' style='margin-right:10px'/> " }
 }
 
 //======================================================
@@ -1216,6 +1378,84 @@ function turnBackward()
     resumeMaze()
 }
 
+function backTrack()
+{
+    var tempVar = route.pop();
+
+    //if you are AT an obstacle, go another obstacle previous.
+    //Otherwise, just go to the final obstacle.
+    if( spot[0]==tempVar["spot"][0] && 
+        spot[1]==tempVar["spot"][1] )
+    {
+        tempVar = route.pop();
+    }
+
+    spot[0] = tempVar["spot"][0]
+    spot[1] = tempVar["spot"][1]
+    spot[2] = tempVar["spot"][2]
+    
+    var directionsCheck = obstacleHandler( tempVar["obstacle"], 1 );
+    
+    //if there is only one direction available,
+    //keep going backward until there is a choice.
+    while( directionsCheck == 1 ) 
+    {                                   
+        tempVar = route.pop();
+        spot[0] = tempVar["spot"][0]
+        spot[1] = tempVar["spot"][1]
+        spot[2] = tempVar["spot"][2]
+
+        if( tempVar["obstacle"]["type"]=="begin" )
+        { 
+            startMaze();
+            return; 
+        }
+        if( tempVar["obstacle"]=="Start" )
+        {
+            //have to repopulate the route[] with the custom starting spot.
+            route = []
+        
+            var tempSpot = [];
+            tempSpot[0] = spot[0];
+            tempSpot[1] = spot[1];
+            tempSpot[2] = spot[2];
+            route.push( {"spot":tempSpot, "obstacle":"Start"} );
+            
+            resumeMaze();
+            return;
+        }
+
+        var directionsCheck = obstacleHandler( tempVar["obstacle"], 1 );
+    }
+
+    //there are TWO ways the backtrack could approach the begin: in the above loop,
+    //or also after another obstacle. So I have to put this segment in twice.
+    if( tempVar["obstacle"]["type"]=="begin" )
+    { 
+        startMaze();
+        return; 
+    }
+    if( tempVar["obstacle"]=="Start" )
+    {
+        //have to repopulate the route[] with the custom starting spot.
+        route = []
+        
+        var tempSpot = [];
+        tempSpot[0] = spot[0];
+        tempSpot[1] = spot[1];
+        tempSpot[2] = spot[2];
+        route.push( {"spot":tempSpot, "obstacle":"Start"} );
+           
+        resumeMaze();
+        return;
+    }
+    
+    drawGrid();
+    obstacleHandler( tempVar["obstacle"] );
+    
+}
+
+
 
 //==========================================================
 //==========================================================
@@ -1265,15 +1505,21 @@ function slowDown()
 
 function loadMaze()
 {
-    document.getElementById("action").innerHTML = "File Options: <input type='file' accept='text/plain' onchange='getFile(event)' id='files' name='files[]' style='width: 80px;'/> <input type='submit' value='Cancel'  onclick='document.getElementById(\"action\").innerHTML = startingHTML;'/> <input type='submit' value='Load Sample'  onclick='loadSample()' style='margin-left:20px;'/>"
+    if (tempHTML == "")
+    {
+        tempHTML = document.getElementById("action").innerHTML;
+    }
+    
+    document.getElementById("action").innerHTML = "File Options: <input type='file' accept='text/plain' onchange='getFile(event)' id='files' name='files[]' style='width: 80px;'/> <input type='submit' value='Cancel'  onclick='cancel_button()'/> <input type='submit' value='Load Sample'  onclick='loadSample()' style='margin-left:20px;'/>"
 }
 
 function getFile(event)
 {
     var file = event.target.files[0];
-
+    tempHTML = "";
+    
     if(file) {
-        document.getElementById('action').innerHTML = startingHTML;
+        document.getElementById('action').innerHTML = mazeSOLVER;
 
         var reader = new FileReader();
         reader.onload = function(event) {
@@ -1326,23 +1572,51 @@ function processFile(contents)
     drawGrid()
 }
 
+
 function loadSample()
 {
-    document.getElementById('action').innerHTML = startingHTML;
+    if(tempHTML == "")
+    {
+        tempHTML = document.getElementById("action").innerHTML;
+    }
+    
+    document.getElementById('action').innerHTML = "<input type='submit' value='Sample 1 (Easy)' onclick='sample1()'/> <input type='submit' value='Sample 2 (Challenging)' onclick='sample2()' />  <input type='submit' value='Cancel'  onclick='cancel_button()'/>"
+}
+
+function sample1()
+{
+    document.getElementById('action').innerHTML = mazeSOLVER;
+    tempHTML = "";
     
     var sampleMaze = "X_GRIDS=22 Y_GRIDS=25 type=begin orient=horizontal x=1 y=24 type=wall orient=vertical x=1 y=23 type=wall orient=vertical x=2 y=23 type=permeable orient=horizontal x=1 y=20 type=wall orient=vertical x=1 y=14 type=wall orient=horizontal x=1 y=14 type=permeable orient=horizontal x=5 y=14 type=permeable orient=vertical x=6 y=14 type=wall orient=vertical x=5 y=22 type=wall orient=horizontal x=5 y=23 type=wall orient=vertical x=5 y=21 type=wall orient=horizontal x=10 y=22 type=wall orient=horizontal x=15 y=23 type=wall orient=vertical x=16 y=22 type=wall orient=vertical x=16 y=23 type=wall orient=vertical x=17 y=23 type=end orient=horizontal x=16 y=24 type=wall orient=horizontal x=17 y=22 type=wall orient=vertical x=18 y=21 type=wall orient=vertical x=18 y=20 type=wall orient=vertical x=11 y=14 type=wall orient=horizontal x=1 y=11 type=wall orient=vertical x=1 y=10 type=permeable orient=vertical x=1 y=6 type=permeable orient=vertical x=7 y=6 type=wall orient=vertical x=7 y=8 type=wall orient=horizontal x=7 y=9 type=wall orient=horizontal x=10 y=9 type=wall orient=vertical x=11 y=8 type=wall orient=vertical x=11 y=4 type=wall orient=horizontal x=10 y=4 type=wall orient=horizontal x=7 y=4 type=wall orient=vertical x=7 y=4 type=wall orient=vertical x=14 y=7 type=wall orient=horizontal x=14 y=7 type=wall orient=horizontal x=15 y=6 type=wall orient=vertical x=17 y=9 type=wall orient=horizontal x=17 y=9 type=wall orient=horizontal x=16 y=10 type=wall orient=vertical x=16 y=10 type=wall orient=horizontal x=14 y=20 type=wall orient=vertical x=15 y=19 type=wall orient=horizontal x=20 y=7 type=wall orient=vertical x=21 y=7 type=wall orient=horizontal x=20 y=11 type=wall orient=vertical x=21 y=10";
 
     processFile(sampleMaze);
 }
 
+function sample2()
+{
+    document.getElementById('action').innerHTML = mazeSOLVER;
+    tempHTML = "";
+    
+    INTERVAL = 15;
+    
+    var sampleMaze = "X_GRIDS=32 Y_GRIDS=35 type=wall orient=vertical x=2 y=33 type=wall orient=horizontal x=1 y=33 type=wall orient=vertical x=1 y=32 type=wall orient=vertical x=3 y=33 type=wall orient=horizontal x=3 y=33 type=wall orient=vertical x=4 y=32 type=wall orient=horizontal x=3 y=34 type=begin orient=horizontal x=2 y=34 type=wall orient=horizontal x=7 y=34 type=wall orient=horizontal x=8 y=34 type=wall orient=vertical x=8 y=33 type=wall orient=horizontal x=8 y=33 type=wall orient=horizontal x=8 y=31 type=wall orient=vertical x=8 y=30 type=wall orient=horizontal x=12 y=30 type=wall orient=vertical x=12 y=29 type=wall orient=horizontal x=10 y=34 type=permeable orient=vertical x=10 y=33 type=permeable orient=horizontal x=8 y=28 type=wall orient=vertical x=9 y=26 type=wall orient=horizontal x=9 y=26 type=wall orient=vertical x=10 y=25 type=wall orient=horizontal x=10 y=25 type=wall orient=vertical x=8 y=25 type=wall orient=horizontal x=8 y=25 type=permeable orient=vertical x=11 y=25 type=permeable orient=vertical x=13 y=24 type=permeable orient=vertical x=13 y=23 type=wall orient=vertical x=11 y=26 type=wall orient=horizontal x=11 y=27 type=wall orient=horizontal x=13 y=27 type=wall orient=horizontal x=15 y=27 type=wall orient=horizontal x=14 y=24 type=wall orient=horizontal x=16 y=25 type=wall orient=vertical x=17 y=23 type=wall orient=horizontal x=16 y=23 type=wall orient=vertical x=17 y=22 type=wall orient=vertical x=15 y=22 type=wall orient=horizontal x=15 y=22 type=permeable orient=vertical x=16 y=21 type=permeable orient=horizontal x=12 y=21 type=wall orient=horizontal x=13 y=23 type=permeable orient=horizontal x=11 y=19 type=wall orient=vertical x=11 y=19 type=wall orient=vertical x=1 y=24 type=wall orient=horizontal x=0 y=24 type=wall orient=vertical x=0 y=23 type=permeable orient=vertical x=3 y=23 type=permeable orient=horizontal x=10 y=17 type=permeable orient=horizontal x=9 y=17 type=wall orient=vertical x=10 y=16 type=wall orient=vertical x=10 y=15 type=wall orient=horizontal x=9 y=15 type=wall orient=vertical x=7 y=14 type=wall orient=horizontal x=7 y=14 type=wall orient=vertical x=9 y=13 type=wall orient=horizontal x=9 y=14 type=wall orient=vertical x=10 y=12 type=wall orient=horizontal x=10 y=13 type=wall orient=vertical x=11 y=13 type=wall orient=vertical x=11 y=11 type=wall orient=horizontal x=11 y=12 type=wall orient=vertical x=12 y=11 type=wall orient=horizontal x=11 y=11 type=wall orient=horizontal x=12 y=13 type=wall orient=vertical x=13 y=12 type=wall orient=horizontal x=13 y=11 type=wall orient=vertical x=13 y=10 type=wall orient=horizontal x=12 y=10 type=wall orient=horizontal x=9 y=11 type=wall orient=vertical x=10 y=10 type=wall orient=horizontal x=10 y=10 type=wall orient=vertical x=11 y=9 type=wall orient=horizontal x=1 y=16 type=wall orient=vertical x=1 y=15 type=wall orient=vertical x=1 y=16 type=wall orient=vertical x=2 y=17 type=wall orient=horizontal x=2 y=17 type=wall orient=vertical x=4 y=20 type=wall orient=horizontal x=4 y=21 type=wall orient=vertical x=5 y=21 type=wall orient=horizontal x=5 y=22 type=wall orient=vertical x=12 y=15 type=wall orient=horizontal x=12 y=15 type=permeable orient=vertical x=12 y=14 type=permeable orient=vertical x=13 y=13 type=permeable orient=vertical x=14 y=13 type=permeable orient=vertical x=13 y=9 type=permeable orient=vertical x=16 y=24 type=wall orient=vertical x=12 y=7 type=wall orient=vertical x=11 y=5 type=wall orient=horizontal x=11 y=5 type=permeable orient=horizontal x=11 y=8 type=permeable orient=horizontal x=11 y=4 type=wall orient=vertical x=11 y=3 type=wall orient=vertical x=11 y=2 type=wall orient=horizontal x=11 y=2 type=wall orient=horizontal x=10 y=0 type=wall orient=horizontal x=2 y=0 type=wall orient=vertical x=2 y=0 type=wall orient=horizontal x=1 y=1 type=wall orient=vertical x=1 y=1 type=wall orient=horizontal x=0 y=2 type=wall orient=vertical x=0 y=2 type=wall orient=horizontal x=14 y=0 type=wall orient=horizontal x=15 y=1 type=wall orient=vertical x=16 y=1 type=wall orient=horizontal x=16 y=1 type=wall orient=horizontal x=19 y=1 type=wall orient=horizontal x=23 y=0 type=wall orient=vertical x=24 y=0 type=wall orient=horizontal x=25 y=1 type=wall orient=vertical x=26 y=1 type=wall orient=horizontal x=25 y=2 type=wall orient=horizontal x=24 y=3 type=wall orient=vertical x=27 y=1 type=wall orient=horizontal x=27 y=1 type=wall orient=vertical x=28 y=2 type=wall orient=horizontal x=27 y=3 type=wall orient=vertical x=27 y=3 type=wall orient=horizontal x=29 y=3 type=wall orient=vertical x=30 y=3 type=wall orient=horizontal x=30 y=1 type=wall orient=vertical x=31 y=1 type=wall orient=horizontal x=28 y=5 type=wall orient=vertical x=29 y=5 type=wall orient=vertical x=15 y=3 type=wall orient=horizontal x=18 y=3 type=wall orient=vertical x=19 y=3 type=wall orient=horizontal x=19 y=4 type=wall orient=vertical x=20 y=4 type=wall orient=vertical x=18 y=4 type=wall orient=vertical x=19 y=5 type=wall orient=horizontal x=18 y=6 type=wall orient=horizontal x=19 y=6 type=wall orient=vertical x=20 y=6 type=wall orient=horizontal x=13 y=8 type=wall orient=vertical x=2 y=6 type=wall orient=horizontal x=2 y=7 type=wall orient=vertical x=4 y=7 type=wall orient=horizontal x=4 y=7 type=wall orient=horizontal x=3 y=9 type=wall orient=vertical x=3 y=9 type=wall orient=vertical x=3 y=11 type=wall orient=horizontal x=3 y=12 type=wall orient=vertical x=3 y=12 type=wall orient=horizontal x=5 y=11 type=wall orient=horizontal x=20 y=11 type=wall orient=vertical x=21 y=11 type=permeable orient=vertical x=21 y=13 type=wall orient=horizontal x=23 y=15 type=wall orient=vertical x=24 y=15 type=wall orient=horizontal x=24 y=16 type=wall orient=vertical x=26 y=16 type=wall orient=horizontal x=22 y=17 type=wall orient=horizontal x=21 y=17 type=wall orient=vertical x=21 y=17 type=wall orient=vertical x=20 y=19 type=wall orient=horizontal x=19 y=20 type=wall orient=horizontal x=17 y=19 type=wall orient=vertical x=18 y=18 type=wall orient=vertical x=27 y=19 type=wall orient=vertical x=28 y=20 type=wall orient=horizontal x=27 y=21 type=wall orient=vertical x=27 y=21 type=permeable orient=horizontal x=26 y=20 type=permeable orient=vertical x=25 y=21 type=wall orient=vertical x=26 y=21 type=wall orient=vertical x=26 y=24 type=permeable orient=horizontal x=25 y=25 type=wall orient=horizontal x=23 y=26 type=permeable orient=vertical x=22 y=25 type=permeable orient=vertical x=22 y=26 type=permeable orient=horizontal x=21 y=30 type=wall orient=horizontal x=22 y=30 type=wall orient=horizontal x=24 y=30 type=wall orient=horizontal x=23 y=31 type=wall orient=vertical x=20 y=31 type=wall orient=horizontal x=20 y=32 type=wall orient=horizontal x=21 y=34 type=wall orient=horizontal x=23 y=34 type=permeable orient=vertical x=24 y=31 type=wall orient=horizontal x=25 y=34 type=wall orient=horizontal x=26 y=34 type=wall orient=vertical x=27 y=33 type=wall orient=horizontal x=26 y=33 type=wall orient=vertical x=26 y=32 type=wall orient=vertical x=27 y=30 type=wall orient=horizontal x=28 y=33 type=wall orient=vertical x=29 y=32 type=wall orient=vertical x=28 y=33 type=wall orient=horizontal x=28 y=34 type=wall orient=horizontal x=29 y=34 type=wall orient=horizontal x=30 y=34 type=wall orient=vertical x=31 y=33 type=wall orient=vertical x=30 y=31 type=wall orient=vertical x=31 y=29 type=wall orient=vertical x=31 y=27 type=wall orient=vertical x=31 y=26 type=wall orient=vertical x=30 y=25 type=wall orient=horizontal x=29 y=25 type=permeable orient=horizontal x=29 y=22 type=wall orient=vertical x=31 y=21 type=wall orient=vertical x=31 y=17 type=wall orient=vertical x=31 y=14 type=permeable orient=horizontal x=30 y=15 type=wall orient=horizontal x=26 y=8 type=wall orient=vertical x=27 y=8 type=wall orient=horizontal x=25 y=10 type=wall orient=vertical x=26 y=10 type=end orient=horizontal x=27 y=34"
+        
+    processFile(sampleMaze);
+}
+
 function saveMaze()
 {
-    document.getElementById("action").innerHTML = "Output Filename: <input type='text' id='savefield' style='width:110px; margin-left: 5px;'/>.txt <input type='submit' style='margin-left:20px;' value='OK' onclick='outputFile()'/> <input type='submit' value='Cancel' onclick='document.getElementById(\"action\").innerHTML = startingHTML;'/>"
+    if(tempHTML == "")
+    {
+        tempHTML = document.getElementById("action").innerHTML;
+    }
+    document.getElementById("action").innerHTML = "Output Filename: <input type='text' id='savefield' style='width:110px; margin-left: 5px;'/>.txt <input type='submit' style='margin-left:20px;' value='OK' onclick='outputFile()'/> <input type='submit' value='Cancel' onclick='cancel_button()'/>"
 }
 
 function outputFile()
 {
-
+    tempHTML = ""
     var textString = "";
     textString += "X_GRIDS=" + X_GRIDS + " Y_GRIDS=" + Y_GRIDS
     
@@ -1384,5 +1658,4 @@ function window_onunload()
         newWindow.close();
     }
 }
-
 
