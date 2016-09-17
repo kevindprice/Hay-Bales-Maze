@@ -19,6 +19,7 @@ setLine
 
 checkForObstacle
 findBegin
+isIn
 
 clickHandler
 startCustom
@@ -508,6 +509,21 @@ function findBegin()
     }
     
     return -1;
+}
+
+//adds compatibility for Edge Browser
+//(the .includes feature doesn't work, so I had to create my own.)
+function isIn(list, item)
+{
+    for(var i=0; i<list.length; i++)
+    {
+        if(list[i] == item)
+        {
+            return true;
+        }
+        
+    }
+    return false;
 }
 
 
@@ -1093,20 +1109,20 @@ function obstacleHandler(stop_obstacle, checkNumber)  //checkNumber =
             if( stop_obstacle["type"] == "permeable" )
             { directions.push("forward") }
             
-            if( sides.includes("left") &&
-                sides.includes("right") )
+            if( isIn(sides, "left") &&
+                isIn(sides, "right") )
             { directions.push("backward") }
 
-            if( sides.includes("left") &&
-                !sides.includes("right") )
+            if( isIn(sides, "left") &&
+                !isIn(sides, "right") )
             { directions.push("right") }
             
-            if( !sides.includes("left") &&
-                sides.includes("right") )
+            if( !isIn(sides, "left") &&
+                isIn(sides, "right") )
             { directions.push("left") }
             
-            if( !sides.includes("right") &&
-                !sides.includes("left") )
+            if( !isIn(sides, "right") &&
+                !isIn(sides, "left") )
             { directions.push("right")
               directions.push("left") }
             break
@@ -1115,20 +1131,20 @@ function obstacleHandler(stop_obstacle, checkNumber)  //checkNumber =
             if( stop_obstacle["type"] == "permeable" )
             { directions.push("forward") }
             
-            if( sides.includes("left") &&
-                sides.includes("right") )
+            if( isIn(sides, "left") &&
+                isIn(sides, "right") )
             { directions.push("backward") }
 
-            if( sides.includes("left") &&
-                !sides.includes("right") )
+            if( isIn(sides, "left") &&
+                !isIn(sides, "right") )
             { directions.push("left") } //left and right are swapped
                                         //when moving down
-            if( !sides.includes("left") &&
-                sides.includes("right") )
+            if( !isIn(sides, "left") &&
+                isIn(sides, "right") )
             { directions.push("right") } //left and right are swapped
                                         //when moving down
-            if( !sides.includes("right") &&
-                !sides.includes("left") )
+            if( !isIn(sides, "right") &&
+                !isIn(sides, "left") )
             { directions.push("right")
               directions.push("left") }
             break;
@@ -1137,20 +1153,20 @@ function obstacleHandler(stop_obstacle, checkNumber)  //checkNumber =
             if( stop_obstacle["type"] == "permeable" )
             { directions.push("forward") }
             
-            if( sides.includes("top") &&
-                sides.includes("bottom") )
+            if( isIn(sides, "top") &&
+                isIn(sides, "bottom") )
             { directions.push("backward") }
 
-            if( sides.includes("top") &&
-                !sides.includes("bottom") )
+            if( isIn(sides, "top") &&
+                !isIn(sides, "bottom") )
             { directions.push("right") }
 
-            if( !sides.includes("top") &&
-                sides.includes("bottom") )
+            if( !isIn(sides, "top") &&
+                isIn(sides, "bottom") )
             { directions.push("left") }
 
-            if( !sides.includes("top") &&
-                !sides.includes("bottom") )
+            if( !isIn(sides, "top") &&
+                !isIn(sides, "bottom") )
             { directions.push("right")
               directions.push("left") }
             break;
@@ -1159,20 +1175,20 @@ function obstacleHandler(stop_obstacle, checkNumber)  //checkNumber =
             if( stop_obstacle["type"] == "permeable" )
             { directions.push("forward") }
             
-            if( sides.includes("top") &&
-                sides.includes("bottom") )
+            if( isIn(sides, "top") &&
+                isIn(sides, "bottom") )
             { directions.push("backward") }
 
-            if( sides.includes("top") &&
-                !sides.includes("bottom") )
+            if( isIn(sides, "top") &&
+                !isIn(sides, "bottom") )
             { directions.push("left") }
 
-            if( !sides.includes("top") &&
-                sides.includes("bottom") )
+            if( !isIn(sides, "top") &&
+                isIn(sides, "bottom") )
             { directions.push("right") }
 
-            if( !sides.includes("top") &&
-                !sides.includes("bottom") )
+            if( !isIn(sides, "top") &&
+                !isIn(sides, "bottom") )
             { directions.push("right")
               directions.push("left") }
             break;
@@ -1217,7 +1233,7 @@ function obstacleHandler(stop_obstacle, checkNumber)  //checkNumber =
 
     if(directions.length != 1)
     {
-        if(directions.includes("left"))
+        if(isIn(directions, "left"))
         {
           /*  actionBar.innerHTML += " <input type='submit' value='Turn Left' onclick='turnLeft()'/>" */
           
@@ -1240,7 +1256,7 @@ function obstacleHandler(stop_obstacle, checkNumber)  //checkNumber =
           
         }
 
-        if(directions.includes("right"))
+        if(isIn(directions, "right"))
         {
           /*  actionBar.innerHTML += " <input type='submit' value='Turn Right' onclick='turnRight()'/>" */
           
@@ -1264,17 +1280,17 @@ function obstacleHandler(stop_obstacle, checkNumber)  //checkNumber =
         }
     }
     
-    if(directions.includes("backward"))
+    if(isIn(directions, "backward"))
     {
         actionBar.innerHTML += " <input type='submit' value='Turn Around' onclick='turnBackward()'/>"
     }
     
-    if(directions.includes("forward"))
+    if(isIn(directions, "forward"))
     {
         actionBar.innerHTML += " <input type='submit' value='Move Forward' onclick='moveForward()'/>"
     }
 
-    if(directions.length > 1 ) //&& !directions.includes("backward") )
+    if(directions.length > 1 ) //&& !isIn(directions, "backward") )
     {actionBar.innerHTML += "<input type='submit' value='Restart' onclick='startMaze()' style='margin-left: 15px;'/> <input type='submit' value='Custom Spot' onclick='startCustom()'/> <input type='submit' value='Backtrack' onclick='backTrack()' style='margin-right:10px'/> " }
 }
 
