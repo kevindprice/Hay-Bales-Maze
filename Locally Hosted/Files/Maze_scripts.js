@@ -7,6 +7,7 @@ the function definitions themselves.
 
 Global variable definitions
 
+cancel_button
 setPage
 animate_string
 
@@ -50,6 +51,8 @@ loadMaze
 getFile
 processFile
 loadSample
+sample1
+sample2
 saveMaze
 outputFile
 
@@ -100,18 +103,23 @@ mazeSOLVER = "Starting location: <input type='submit' value='Beginning' style='f
 
 //<input type='submit' value='Return to Solver' onclick='solveMaze()'/> 
 
-createMAZE = "<input type='submit' value='Change Grid Size' onclick='changeGridSize()'/> <input type='submit' value='Erase All' onclick='eraseMaze()'/> <input type='submit' value='Save' onclick='saveMaze()' style='margin-right: 10px;'/> Draw: <input type='submit' value='Wall' onclick='drawSetting(\"wall\")'/> <input type='submit' value='Permeable' onclick='drawSetting(\"permeable\")'/> <input type='submit' value='Beginning' onclick='drawSetting(\"begin\")'/> <input type='submit' value='End' onclick='drawSetting(\"end\")'/>"
+createMAZE = "<input type='submit' value='Grid Size' onclick='changeGridSize()'/> <input type='submit' value='Erase All' onclick='eraseMaze()'/> <input type='submit' value='Save' onclick='saveMaze()'/> <input type='submit' value='SOLVE' onclick='solveMaze()' style='margin-right: 10px;'/>Draw: <input type='submit' value='Wall' onclick='drawSetting(\"wall\")'/> <input type='submit' value='Permeable' onclick='drawSetting(\"permeable\")'/> <input type='submit' value='Beginning' onclick='drawSetting(\"begin\")'/> <input type='submit' value='End' onclick='drawSetting(\"end\")'/>"
 
 movingHTML = "Actions: <input type='submit' value='Stop the Maze' onclick='stopMaze()'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()'/>"
 
-pausedHTML = "<input type='submit' value='Resume the Maze' onclick='resumeMaze()' style='margin-right:10px'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()' style='margin-right:10px'/> Go to:<input type='submit' value='Beginning' onclick='startMaze()'/> <input type='submit' value='Custom Spot' onclick='startCustom()'/>"
+pausedHTML = "<input type='submit' value='Resume the Maze' onclick='resumeMaze()' style='margin-right:10px'/> <input type='submit' value='Backtrack' onclick='backTrack()' style='margin-right:10px'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()' style='margin-right:10px'/> Go to:<input type='submit' value='Beginning' onclick='startMaze()'/> <input type='submit' value='Custom Spot' onclick='startCustom()'/>"
 
 turningHTML = "Actions: "
 
 var tempHTML = "";  //allows the CANCEL button to remember
                     //where to cancel back to.
 
-var spot = []; 
+var customSpot = []; //temporarily filled with the click location
+                    //when a user chooses to start from a custom spot.
+                    
+var spot = []; //keep track of the user's location in the maze
+
+var route = []; //keep track of the route the user took
 
 var newWindow;
 
@@ -120,8 +128,8 @@ var newWindow;
 //================================================================
 //================================================================
 
-function cancel_button()
-{
+function cancel_button()  //I confess, the implementation of this
+{                         //is a bit sloppy.
     if(tempHTML != "")
     {
         document.getElementById("action").innerHTML = tempHTML;
@@ -209,6 +217,39 @@ function drawGrid()
     context.stroke(); 
 
     refreshObstacles(canvas, context);
+    
+    if(route.length>0)
+    {
+        refreshRoute(canvas, context);
+    }
+}
+
+function refreshRoute(canvas, context)
+{
+    context.beginPath();
+    context.strokeStyle="#00FF00"; //green
+
+    context.moveTo( Math.round( route[0]["spot"][0]*INTERVAL + INTERVAL/2), 
+                    Math.round( route[0]["spot"][1]*INTERVAL + INTERVAL/2) ); 
+    
+    for(var i=1; i<route.length; i++)
+    {
+        context.lineTo(Math.round( route[i]["spot"][0]*INTERVAL + INTERVAL/2), 
+                       Math.round( route[i]["spot"][1]*INTERVAL + INTERVAL/2) );
+    }
+
+    context.stroke();
+
+    context.beginPath(); //draw the LAST SEGMENT in a darker color.
+    context.strokeStyle="#006600"; //DARK green
+    
+    context.moveTo(Math.round( route[route.length - 1]["spot"][0]*INTERVAL + INTERVAL/2), 
+                   Math.round( route[route.length - 1]["spot"][1]*INTERVAL + INTERVAL/2) );
+    context.lineTo(Math.round( spot[0]*INTERVAL + INTERVAL/2), 
+                   Math.round( spot[1]*INTERVAL + INTERVAL/2) );
+    
+    context.stroke()
+    
 }
 
 //after drawing the grid, you have to refresh the obstacles.
@@ -406,7 +447,7 @@ function drawObstacle(obstacle)
     }
 
     //sets up the context...
-    canvas = document.getElementById("canvas");
+    var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d");
     
     switch(OBSTACLE_TYPE)
@@ -475,7 +516,7 @@ function findBegin()
 //This function handles what to do when you click on the canvas.
 function clickHandler(event) {
     //get canvas
-    canvas = document.getElementById("canvas");
+    var canvas = document.getElementById("canvas");
 
     //now find coordinates of the click relative to the canvas.
 
@@ -530,8 +571,8 @@ function startCustom(x,y,direction) //=-1, y=-1, direction = "")
         while(y % INTERVAL != 0)
         {y--;}
  
-        spot[0] = x / INTERVAL;
-        spot[1] = y / INTERVAL;
+        customSpot[0] = x / INTERVAL;
+        customSpot[1] = y / INTERVAL;
         
         if(tempHTML == "")
         {
@@ -543,7 +584,17 @@ function startCustom(x,y,direction) //=-1, y=-1, direction = "")
     else if(direction != "")
     {
         tempHTML = "";
+        spot[0] = customSpot[0];
+        spot[1] = customSpot[1];
         spot[2]=direction;
+
+        route = []
+        
+        var tempSpot = [];
+        tempSpot[0] = spot[0];
+        tempSpot[1] = spot[1];
+        route.push( {"spot":tempSpot, "obstacle":"Start"} );
+        
         resumeMaze()
     }
 }
@@ -555,6 +606,7 @@ function startCustom(x,y,direction) //=-1, y=-1, direction = "")
 
 function createMaze()
 {
+    route = [];
     drawGrid();
     document.getElementById("action").innerHTML = createMAZE;
     spot[3]="drawing";  //necessary so the click handler knows
@@ -586,39 +638,47 @@ function eraseMaze()
 }
 
 
-function changeGridSize()
+function changeGridSize(horizontal, vertical)
 {
-    var input_value = "Hi";
-    while(isNaN(input_value))
+    if(horizontal==null)
     {
-        input_value=Number(prompt("How many horizontal grids would you like?", X_GRIDS))
+        tempHTML = document.getElementById("action").innerHTML
+        document.getElementById("action").innerHTML = "(10 < x < 200) Horizontal Grids: <input type='text' id='horizontal' style='width:40px; margin-left: 5px; margin-right: 20px;'/> Vertical Grids: <input type='text' id='vertical' style='width:40px; margin-left: 5px;'/> <input type='submit' value='OK' onclick='changeGridSize( document.getElementById(\"horizontal\").value, document.getElementById(\"vertical\").value )'/>"
+        
+        document.getElementById("horizontal").value = X_GRIDS;
+        document.getElementById("vertical").value = Y_GRIDS;
+        
     }
-    
-    if(input_value > 200)
-    { input_value = 200; } 
-    else if(input_value < 5)
-    { input_value = 5; }
-
-    X_GRIDS = Math.round(input_value);
-
-    input_value = "Hi";
-    while(isNaN(input_value))
+    else
     {
-        input_value=Number(prompt("How many vertical grids would you like?", Y_GRIDS))
+        horizontal = Number(horizontal)
+        vertical = Number(vertical)
+        
+        if(!isNaN(horizontal) && !isNaN(vertical) 
+            && horizontal < 201 && horizontal > 9
+            && vertical < 201 && vertical > 9 )
+        {
+            /* if(horizontal > 200)
+            { horizontal = 200; } 
+            else if(horizontal < 5)
+            { horizontal = 5; }
+
+            if(vertical > 200)
+            { vertical = 200; } 
+            else if(vertical < 5)
+            { vertical = 5; } */
+
+            X_GRIDS = Math.round(horizontal);
+            Y_GRIDS = Math.round(vertical);
+
+            CANVAS_WIDTH = INTERVAL * X_GRIDS;
+            CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
+            
+            drawGrid();
+            
+            cancel_button()
+        }   
     }
-    
-    if(input_value > 200)
-    { input_value = 200; } 
-    else if(input_value < 5)
-    { input_value = 5; }
-
-    Y_GRIDS = Math.round(input_value);
-
-    CANVAS_WIDTH = INTERVAL * X_GRIDS;
-    CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
-
-    
-    drawGrid();
 }
 
 
@@ -655,6 +715,8 @@ function resumeMaze()
 function startMaze()
 {
     beginObstacle = findBegin()
+    route = []
+
     if(beginObstacle == -1)
     {
         alert("A beginning location has not been placed yet!\n\nGo to the Create Maze page (Main Menu-->Maze Creator) and place the maze beginning. The maze will start upwards from that location. Go to the Instructions page (Main Menu-->Instructions) for more information.")
@@ -664,6 +726,13 @@ function startMaze()
         document.getElementById("action").innerHTML = movingHTML;
 
         spot = [ obstacles[beginObstacle]["x"], obstacles[beginObstacle]["y"] - 1/2 , "up", "moving"];
+
+        var tempSpot = [];
+        tempSpot[0] = spot[0];
+        tempSpot[1] = spot[1];
+
+        route.push( {"spot":tempSpot, "obstacle":"Start"} );
+
         drawGrid(); //to erase the line that's already there. Refresh.
         move();
     }
@@ -675,7 +744,7 @@ function startMaze()
 //It stops after it arrives at the location of the next obstacle.
 function move()
 {
-    canvas = document.getElementById("canvas");
+    var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d");
  
     var pixelsSpot;
@@ -686,8 +755,8 @@ function move()
 
     //move the line on an interval
     var time_interval = setInterval(function() {
-        context.beginPath();
-        context.strokeStyle="#00FF00"; //green
+        context.beginPath();   //First draw a line in GREEN
+        context.strokeStyle="#007700"; //dark green
 
         context.moveTo( Math.round(spot[0]*INTERVAL + INTERVAL/2), 
                          Math.round(spot[1]*INTERVAL + INTERVAL/2) ); 
@@ -722,10 +791,50 @@ function move()
                         Math.round(spot[1]*INTERVAL + INTERVAL/2) );  
         context.stroke();
 
-        //Check for the next obstacle
+        //Decrease the distance to the next obstacle
         pixelsSpot = stop["dist"]*INTERVAL;
         pixelsSpot -= MOVEDIST;
         stop["dist"] = pixelsSpot / INTERVAL;
+
+        /*
+        //Now give the line a BLACK tip AHEAD of your spot.
+        context.beginPath();   
+        context.moveTo( Math.round(spot[0]*INTERVAL + INTERVAL/2), 
+                        Math.round(spot[1]*INTERVAL + INTERVAL/2) );  
+        context.strokeStyle="#000000";
+
+        var tip = []
+        tip[0]=spot[0]
+        tip[1]=spot[1]
+        
+        switch(spot[2])  //Add a BLACK tip 
+        {                //so you can better see the END.
+            case "up":
+                pixelsSpot = tip[1]*INTERVAL;
+                pixelsSpot -= MOVEDIST;
+                tip[1] = pixelsSpot / INTERVAL;
+                break;
+            case "down":
+                pixelsSpot = tip[1]*INTERVAL;
+                pixelsSpot += MOVEDIST;
+                tip[1] = pixelsSpot / INTERVAL;
+                break;
+            case "right":
+                pixelsSpot = tip[0]*INTERVAL;
+                pixelsSpot += MOVEDIST;
+                tip[0] = pixelsSpot / INTERVAL;
+                break;
+            case "left":
+                pixelsSpot = tip[0]*INTERVAL;
+                pixelsSpot -= MOVEDIST;
+                tip[0] = pixelsSpot / INTERVAL;
+                break;
+        }
+        
+        context.lineTo( Math.round(tip[0]*INTERVAL + INTERVAL/2), 
+                        Math.round(tip[1]*INTERVAL + INTERVAL/2) );  
+        context.stroke();
+        */
 
         if(spot[3] == "stopped")
         {
@@ -916,8 +1025,9 @@ function checkObstacles()
 
 
 //this function handles what to do when you hit an obstacle.
-function obstacleHandler(stop_obstacle)
-{
+function obstacleHandler(stop_obstacle, checkNumber)  //checkNumber = 
+                                                            //flag to use this function
+{                                                           //to check number of directions
     //just in case the interval is an odd number,
     //and you didn't land exactly on INTERVAL
     //this will fix that problem. :-)
@@ -925,6 +1035,17 @@ function obstacleHandler(stop_obstacle)
     spot[1]=Math.round(spot[1]);
 
     spot[3]="stopped";
+    
+    drawGrid(); //refresh the line so the corners look nice.
+                //do this BEFORE adding the last obstacle
+                //so the line refresh can make the last segment
+                //in a darker color.
+                
+    var tempSpot = [];
+    tempSpot[0] = spot[0];
+    tempSpot[1] = spot[1];
+
+    route.push( {"spot":tempSpot, "obstacle":stop_obstacle} );
     
     var sides = [];  //will be populated with which sides
                      //of the square have obstacles in them
@@ -1051,6 +1172,11 @@ function obstacleHandler(stop_obstacle)
             break;
     }
     
+    if(checkNumber == 1)    //flag to use this function
+    {                       //just to check number of directions.
+        return directions.length
+    }
+    
     //to simplify changing the action bar
     actionBar = document.getElementById("action");
     
@@ -1142,8 +1268,8 @@ function obstacleHandler(stop_obstacle)
         actionBar.innerHTML += " <input type='submit' value='Move Forward' onclick='moveForward()'/>"
     }
 
-    if(directions.length > 1 && !directions.includes("backward") )
-    {actionBar.innerHTML += "<input type='submit' value='Restart' onclick='startMaze()' style='margin-left: 15px;'/> <input type='submit' value='Custom Spot' onclick='startCustom()'/>" }
+    if(directions.length > 1 ) //&& !directions.includes("backward") )
+    {actionBar.innerHTML += "<input type='submit' value='Restart' onclick='startMaze()' style='margin-left: 15px;'/> <input type='submit' value='Custom Spot' onclick='startCustom()'/> <input type='submit' value='Backtrack' onclick='backTrack()' style='margin-right:10px'/> " }
 }
 
 //======================================================
@@ -1245,6 +1371,41 @@ function turnBackward()
     }
     resumeMaze()
 }
+
+function backTrack()
+{
+    var tempVar = route.pop();
+
+    //If the user PAUSED the maze and clicked back track,
+    //go back to the last obstacle and choose again.
+    if( spot[0]!=route[route.length - 1]["spot"][0] && 
+        spot[1]!=route[route.length - 1]["spot"][1] )
+    {
+        spot[0] = tempVar["spot"][0]
+        spot[1] = tempVar["spot"][1]
+    }
+    else  //if you are AT an obstacle, go another obstacle previous.
+    {
+        tempVar = route.pop();
+        spot[0] = tempVar["spot"][0]
+        spot[1] = tempVar["spot"][1]
+    }
+    
+    //if there is only one direction available,
+    //keep going backward until there is a choice.
+    while( obstacleHandler( obstacleHandler( tempVar["obstacle"], 1 ) == 1 ) )
+    {                                   
+        tempVar = route.pop();
+        spot[0] = tempVar["spot"][0]
+        spot[1] = tempVar["spot"][1]
+
+        if( tempVar["obstacle"]["type"] == "begin" )
+        { break; }
+    }
+    drawGrid();
+    obstacleHandler( tempVar["obstacle"] );
+}
+
 
 
 //==========================================================
