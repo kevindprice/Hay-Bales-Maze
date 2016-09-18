@@ -539,81 +539,82 @@ function isIn(list, item)
 //function checkKey(e) {
 document.onkeydown = function(e) {
     e = e || window.event;
-
-    if (e.keyCode == '38') {
+    if(spot[3]!="drawing")
+    {
+        if (e.keyCode == '38') {
         // up arrow
-        switch(turns["upkey"])
-        {
-            case "forward":
-                moveForward();
-                break;
-            case "backward":
-                turnBackward();
-                break;
-            case "right":
-                turnRight();
-                break;
-            case "left":
-                turnLeft();
-                break;
-        }        
-    }
-    else if (e.keyCode == '40') {
-        // down arrow
-        switch(turns["downkey"])
-        {
-            case "forward":
-                moveForward();
-                break;
-            case "backward":
-                turnBackward();
-                break;
-            case "right":
-                turnRight();
-                break;
-            case "left":
-                turnLeft();
-                break;
-        }        
-    }
-    else if (e.keyCode == '37') {
-       // left arrow
-        switch(turns["leftkey"])
-        {
-            case "forward":
-                moveForward();
-                break;
-            case "backward":
-                turnBackward();
-                break;
-            case "right":
-                turnRight();
-                break;
-            case "left":
-                turnLeft();
-                break;
-        }        
-    }
-    else if (e.keyCode == '39') {
-       // right arrow
-        switch(turns["rightkey"])
-        {
-            case "forward":
-                moveForward();
-                break;
-            case "backward":
-                turnBackward();
-                break;
-            case "right":
-                turnRight();
-                break;
-            case "left":
-                turnLeft();
-                break;
-        }        
+            switch(turns["upkey"])
+            {
+                case "forward":
+                    moveForward();
+                    break;
+                case "backward":
+                    turnBackward();
+                    break;
+                case "right":
+                    turnRight();
+                    break;
+                case "left":
+                    turnLeft();
+                    break;
+            }        
+        }
+        else if (e.keyCode == '40') {
+            // down arrow
+            switch(turns["downkey"])
+            {
+                case "forward":
+                    moveForward();
+                    break;
+                case "backward":
+                    turnBackward();
+                    break;
+                case "right":
+                    turnRight();
+                    break;
+                case "left":
+                    turnLeft();
+                    break;
+            }        
+        }
+        else if (e.keyCode == '37') {
+        // left arrow
+            switch(turns["leftkey"])
+            {
+                case "forward":
+                    moveForward();
+                    break;
+                case "backward":
+                    turnBackward();
+                    break;
+                case "right":
+                    turnRight();
+                    break;
+                case "left":
+                    turnLeft();
+                    break;
+            }           
+        }
+        else if (e.keyCode == '39') {
+        // right arrow
+            switch(turns["rightkey"])
+            {
+                case "forward":
+                    moveForward();
+                    break;
+                case "backward":
+                    turnBackward();
+                    break;
+                case "right":
+                    turnRight();
+                    break;
+                case "left":
+                    turnLeft();
+                    break;
+            }        
+        }
     }
 }
-
 
 //This function handles what to do when you click on the canvas.
 function clickHandler(event) {
