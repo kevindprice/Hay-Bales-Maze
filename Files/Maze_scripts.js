@@ -539,6 +539,26 @@ function isIn(list, item)
 //function checkKey(e) {
 document.onkeydown = function(e) {
     e = e || window.event;
+    
+    if(spot[3]=="startCustom")
+    {
+        switch(e.keyCode)
+        {
+            case 37:
+                startCustom(-1,-1,"left")
+                break;
+            case 38:
+                startCustom(-1,-1,"up")
+                break;
+            case 39:
+                startCustom(-1,-1,"right")
+                break;
+            case 40:
+                startCustom(-1,-1,"down")
+                break;
+        }
+    }    
+    
     if(spot[3]!="drawing")
     {
         if (e.keyCode == '38') {
@@ -681,6 +701,8 @@ function startCustom(x,y,direction) //=-1, y=-1, direction = "")
         {
             tempHTML = document.getElementById("action").innerHTML;
         }
+        
+        spot[3] = "startCustom"
         
         document.getElementById("action").innerHTML = "Start here?  Starting direction: <input type='submit' value='Up' onclick='startCustom(-1,-1,\"up\")'/> <input type='submit' value='Down' onclick='startCustom(-1,-1,\"down\")'/> <input type='submit' value='Right' onclick='startCustom(-1,-1,\"right\")'/> <input type='submit' value='Left' onclick='startCustom(-1,-1,\"left\")'/> <input type='submit' value='Cancel' style='margin-left: 30px' onclick='cancel_button()' />"
     }
@@ -1130,9 +1152,9 @@ function checkObstacles()
 
 
 //this function handles what to do when you hit an obstacle.
-function obstacleHandler(stop_obstacle, checkNumber)  //checkNumber = 
-                                                            //flag to use this function
-{                                                           //to check number of directions
+function obstacleHandler(stop_obstacle, checkNumber)   
+                           //checkNumber = flag to use this function
+{                                          //to check number of directions
     //just in case the interval is an odd number,
     //and you didn't land exactly on INTERVAL
     //this will fix that problem. :-)
@@ -1319,7 +1341,7 @@ function obstacleHandler(stop_obstacle, checkNumber)  //checkNumber =
     if(stop_obstacle["type"] == "edge")
     {
         //set the action bar to say "Start the Maze"
-        actionBar.innerHTML = mazeSOLVER;
+        actionBar.innerHTML = mazeSOLVER + "<input type='submit' value='Backtrack' onclick='backTrack()'/>";
         spot[3] = "stopped";
         directions = [];
         alert("You went off the edge!")
