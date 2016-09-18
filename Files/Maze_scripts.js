@@ -111,7 +111,7 @@ movingHTML = "Actions: <input type='submit' value='Stop the Maze' onclick='stopM
 
 pausedHTML = "<input type='submit' value='Resume Maze' onclick='resumeMaze()'/> <input type='submit' value='Backtrack' onclick='backTrack()' style='margin-right:10px'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()' style='margin-right:10px'/> Go to:<input type='submit' value='Beginning' onclick='startMaze()'/> <input type='submit' value='Custom Spot' onclick='startCustom()'/>"
 
-turningHTML = "Actions: "
+turningHTML = "Actions: <input type='submit' value='Backtrack' onclick='backTrack()' style='margin-right:10px'/> "
 
 var tempHTML = "";  //allows the CANCEL button to remember
                     //where to cancel back to.
@@ -714,6 +714,7 @@ function startCustom(x,y,direction) //=-1, y=-1, direction = "")
         spot[2]=direction;
 
         route = []
+        drawGrid();
         
         var tempSpot = [];
         tempSpot[0] = spot[0];
@@ -1427,7 +1428,7 @@ function obstacleHandler(stop_obstacle, checkNumber)
     }
 
     if(directions.length > 1 ) //&& !isIn(directions, "backward") )
-    {actionBar.innerHTML += "<input type='submit' value='Restart' onclick='startMaze()' style='margin-left: 15px;'/> <input type='submit' value='Custom Spot' onclick='startCustom()'/> <input type='submit' value='Backtrack' onclick='backTrack()' style='margin-right:10px'/> " }
+    {actionBar.innerHTML += "<input type='submit' value='Restart' onclick='startMaze()' style='margin-left: 15px;'/> <input type='submit' value='Custom Spot' onclick='startCustom()'/>" }
 }
 
 //======================================================
