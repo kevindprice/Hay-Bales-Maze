@@ -1342,7 +1342,7 @@ function obstacleHandler(stop_obstacle, checkNumber)
     if(stop_obstacle["type"] == "edge")
     {
         //set the action bar to say "Start the Maze"
-        actionBar.innerHTML = mazeSOLVER + "<input type='submit' value='Backtrack' onclick='backTrack()'/>";
+        actionBar.innerHTML = "<input type='submit' value='Backtrack' onclick='backTrack()'/>" + mazeSOLVER;
         spot[3] = "stopped";
         directions = [];
         alert("You went off the edge!")
