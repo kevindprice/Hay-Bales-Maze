@@ -1660,26 +1660,6 @@ function slowDown()
 //=======================================================
 //These functions handle file processing.
 
-//XML Parser
-
-var parseXml;
-
-if (typeof window.DOMParser != "undefined") {
-	parseXml = function(xmlStr) {
-		return ( new window.DOMParser() ).parseFromString(xmlStr, "text/xml");
-	};
-} else if (typeof window.ActiveXObject != "undefined" &&
-		new window.ActiveXObject("Microsoft.XMLDOM")) {
-	parseXml = function(xmlStr) {
-		var xmlDoc = new window.ActiveXObject("Microsoft.XMLDOM");
-		xmlDoc.async = "false";
-		xmlDoc.loadXML(xmlStr);
-		return xmlDoc;
-	}; //I might decide to drop support for IE but here's the code.
-} else {
-	throw new Error("No XML parser found");
-}
-
 
 function loadMaze()
 {
@@ -1718,9 +1698,9 @@ function getFile(event)
 
 function processFile(contents)
 {
-    
-	var xml = parseXml(contents)
-    
+	//XML Parser
+	var xml = (new window.DOMParser() ).parseFromString(contents, "text/xml")
+	    
 	X_GRIDS = parseInt(xml.getElementsByTagName('X_GRIDS')[0].firstChild.nodeValue);
     Y_GRIDS = parseInt(xml.getElementsByTagName('Y_GRIDS')[0].firstChild.nodeValue);
 
@@ -1766,16 +1746,26 @@ function loadSample()
 
 function sampleFile(sampleNum, customInterval)
 {
-	var xhr;
-	if (window.XMLHttpRequest) {
-		xhr = new XMLHttpRequest();
-	} else if (window.ActiveXObject) {
-		xhr = new ActiveXObject("Microsoft.XMLHTTP");
-	}
+	var xmlhttp = new XMLHttpRequest();
 
-	xhr.onreadystatechange = function(){ processFile(xhr.responseText); };
-	xhr.open("GET","Files/Sample" + sampleNum + ".maze");
-	xhr.send();
+	xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == XMLHttpRequest.DONE ) {
+           if (xmlhttp.status == 200) {
+			   //alert( xmlhttp.responseText )
+			   processFile( xmlhttp.responseText );
+           }
+           else if (xmlhttp.status == 400) {
+              alert('There was an error 400');
+           }
+           else {
+               alert(xmlhttp.status + ' was returned');
+           }
+        }
+    };
+
+    xmlhttp.open("GET", "Files/Sample" + sampleNum.toString() + ".maze", true);
+    xmlhttp.send();
+
 
     document.getElementById('action').innerHTML = mazeSOLVER;
 	
