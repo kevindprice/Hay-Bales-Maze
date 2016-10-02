@@ -817,6 +817,10 @@ function changeGridSize(horizontal, vertical)
 function solveMaze()
 {
     document.getElementById("action").innerHTML = mazeSOLVER;
+	if(route.length > 0)
+	{
+		document.getElementById("action").innerHTML += "<input type='submit' value='Resume Maze' onclick='resumeMaze()'/>"
+	}
     spot[3]="stopped";  //needs to be changed
 }                       //so the click handler won't send 
                         //clicks to the maze creator.
@@ -1732,6 +1736,7 @@ function processFile(contents)
     //   "y":     <y-coordinate of origin> }
 
     obstacles = []
+	route = []
 	
 	var XML_obstacles = xml.getElementsByTagName('obstacle')
 	for (var i = 0; i < XML_obstacles.length; i++) {
