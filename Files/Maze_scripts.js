@@ -49,7 +49,6 @@ zoomOut
 speedUp
 slowDown
 
-parseXml
 loadMaze
 getFile
 processFile
