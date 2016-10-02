@@ -49,12 +49,12 @@ zoomOut
 speedUp
 slowDown
 
+parseXml
 loadMaze
 getFile
 processFile
 loadSample
-sample1
-sample2
+sampleFile
 saveMaze
 outputFile
 
@@ -1661,6 +1661,9 @@ function slowDown()
 //These functions handle file processing.
 
 //XML Parser
+
+var parseXml;
+
 if (typeof window.DOMParser != "undefined") {
 	parseXml = function(xmlStr) {
 		return ( new window.DOMParser() ).parseFromString(xmlStr, "text/xml");
@@ -1710,9 +1713,6 @@ function getFile(event)
     
     reader.readAsText(file);
 }
-
-var parseXml;
-
 
 
 
