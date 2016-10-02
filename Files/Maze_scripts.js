@@ -1718,12 +1718,6 @@ var parseXml;
 
 function processFile(contents)
 {
-    // Process the file line by line
-    //var lines = contents.split('\n');
-    
-	//split the first line and capture the grid size.
-
-    //var variables = contents.split(' ')
     
 	var xml = parseXml(contents)
     
@@ -1741,7 +1735,7 @@ function processFile(contents)
 	
 	var XML_obstacles = xml.getElementsByTagName('obstacle')
 	for (var i = 0; i < XML_obstacles.length; i++) {
-		//alert(tags[i].nodeName + ' = ' + tags[i].firstChild.nodeValue);		
+
 		newObstacle = {}
 		
         newObstacle["type"]=XML_obstacles[i].getElementsByTagName("type")[0].firstChild.nodeValue
@@ -1757,18 +1751,6 @@ function processFile(contents)
     CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
     drawGrid()
 
-/*        
-    for(var i = 2; i < variables.length; i+=4)
-    {
-        var DictItem = {};
-        
-        DictItem["type"]=variables[i].replace(/^(type=)/g, '');
-        DictItem["orient"]=variables[i+1].replace(/^(orient=)/g, '');
-        DictItem["x"]=Number(variables[i+2].replace( /^\D+/g, ''));
-        DictItem["y"]=Number(variables[i+3].replace( /^\D+/g, ''));
-
-        obstacles.push(DictItem)    
-    }*/
 }
 
 
@@ -1779,293 +1761,28 @@ function loadSample()
         tempHTML = document.getElementById("action").innerHTML;
     }
     
-    document.getElementById('action').innerHTML = "<input type='submit' value='Sample 1 (Easy)' onclick='sample1()'/> <input type='submit' value='Sample 2 (Challenging)' onclick='sample2()' />  <input type='submit' value='Cancel'  onclick='cancel_button()'/>"
+    document.getElementById('action').innerHTML = "<input type='submit' value='Sample 1 (Easy)' onclick='sampleFile(1, 20)'/> <input type='submit' value='Sample 2 (Challenging)' onclick='sampleFile(2, 15)' />  <input type='submit' value='Cancel'  onclick='cancel_button()'/>"
 }
 
-function sample1()
+function sampleFile(sampleNum, customInterval)
 {
-    document.getElementById('action').innerHTML = mazeSOLVER;
-    tempHTML = "";
-    
-    var sampleMaze = `<?xml version="1.0" encoding="UTF-8"?>
-<maze>
-  <size><X_GRIDS>22</X_GRIDS><Y_GRIDS>25</Y_GRIDS></size>
-  <obstacle><type>begin</type><orient>horizontal</orient><x>1</x><y>24</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>1</x><y>23</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>2</x><y>23</y></obstacle>
-  <obstacle><type>permeable</type><orient>horizontal</orient><x>1</x><y>20</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>1</x><y>14</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>1</x><y>14</y></obstacle>
-  <obstacle><type>permeable</type><orient>horizontal</orient><x>5</x><y>14</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>6</x><y>14</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>5</x><y>22</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>5</x><y>23</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>5</x><y>21</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>10</x><y>22</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>15</x><y>23</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>16</x><y>22</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>16</x><y>23</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>17</x><y>23</y></obstacle>
-  <obstacle><type>end</type><orient>horizontal</orient><x>16</x><y>24</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>17</x><y>22</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>18</x><y>21</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>18</x><y>20</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>11</x><y>14</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>1</x><y>11</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>1</x><y>10</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>1</x><y>6</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>7</x><y>6</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>7</x><y>8</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>7</x><y>9</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>10</x><y>9</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>11</x><y>8</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>11</x><y>4</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>10</x><y>4</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>7</x><y>4</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>7</x><y>4</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>14</x><y>7</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>14</x><y>7</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>15</x><y>6</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>17</x><y>9</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>17</x><y>9</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>16</x><y>10</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>16</x><y>10</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>14</x><y>20</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>15</x><y>19</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>20</x><y>7</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>21</x><y>7</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>20</x><y>11</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>21</x><y>10</y></obstacle>
-</maze>`
+	var xhr;
+	if (window.XMLHttpRequest) {
+		xhr = new XMLHttpRequest();
+	} else if (window.ActiveXObject) {
+		xhr = new ActiveXObject("Microsoft.XMLHTTP");
+	}
 
-    processFile(sampleMaze);
+	xhr.onreadystatechange = function(){ processFile(xhr.responseText); };
+	xhr.open("GET","Files/Sample" + sampleNum + ".maze");
+	xhr.send();
+
+    document.getElementById('action').innerHTML = mazeSOLVER;
+	
+	if(customInterval != null)
+	{ INTERVAL = customInterval	}
 }
 
-function sample2()
-{
-    document.getElementById('action').innerHTML = mazeSOLVER;
-    tempHTML = "";
-    
-    INTERVAL = 15;
-    
-    var sampleMaze = `<?xml version="1.0" encoding="UTF-8"?>
-<maze>
-  <size><X_GRIDS>32</X_GRIDS><Y_GRIDS>35</Y_GRIDS></size>
-  <obstacle><type>wall</type><orient>vertical</orient><x>2</x><y>33</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>1</x><y>33</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>1</x><y>32</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>3</x><y>33</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>3</x><y>33</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>4</x><y>32</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>3</x><y>34</y></obstacle>
-  <obstacle><type>begin</type><orient>horizontal</orient><x>2</x><y>34</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>7</x><y>34</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>8</x><y>34</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>8</x><y>33</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>8</x><y>33</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>8</x><y>31</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>8</x><y>30</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>12</x><y>30</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>12</x><y>29</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>10</x><y>34</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>10</x><y>33</y></obstacle>
-  <obstacle><type>permeable</type><orient>horizontal</orient><x>8</x><y>28</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>9</x><y>26</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>9</x><y>26</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>10</x><y>25</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>10</x><y>25</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>8</x><y>25</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>8</x><y>25</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>11</x><y>25</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>13</x><y>24</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>13</x><y>23</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>11</x><y>26</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>11</x><y>27</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>13</x><y>27</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>15</x><y>27</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>14</x><y>24</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>16</x><y>25</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>17</x><y>23</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>16</x><y>23</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>17</x><y>22</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>15</x><y>22</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>15</x><y>22</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>16</x><y>21</y></obstacle>
-  <obstacle><type>permeable</type><orient>horizontal</orient><x>12</x><y>21</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>13</x><y>23</y></obstacle>
-  <obstacle><type>permeable</type><orient>horizontal</orient><x>11</x><y>19</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>11</x><y>19</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>1</x><y>24</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>0</x><y>24</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>0</x><y>23</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>3</x><y>23</y></obstacle>
-  <obstacle><type>permeable</type><orient>horizontal</orient><x>10</x><y>17</y></obstacle>
-  <obstacle><type>permeable</type><orient>horizontal</orient><x>9</x><y>17</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>10</x><y>16</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>10</x><y>15</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>9</x><y>15</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>7</x><y>14</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>7</x><y>14</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>9</x><y>13</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>9</x><y>14</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>10</x><y>12</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>10</x><y>13</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>11</x><y>13</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>11</x><y>11</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>11</x><y>12</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>12</x><y>11</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>11</x><y>11</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>12</x><y>13</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>13</x><y>12</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>13</x><y>11</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>13</x><y>10</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>12</x><y>10</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>9</x><y>11</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>10</x><y>10</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>10</x><y>10</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>11</x><y>9</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>1</x><y>16</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>1</x><y>15</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>1</x><y>16</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>2</x><y>17</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>2</x><y>17</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>4</x><y>20</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>4</x><y>21</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>5</x><y>21</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>5</x><y>22</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>12</x><y>15</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>12</x><y>15</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>12</x><y>14</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>13</x><y>13</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>14</x><y>13</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>13</x><y>9</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>16</x><y>24</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>12</x><y>7</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>11</x><y>5</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>11</x><y>5</y></obstacle>
-  <obstacle><type>permeable</type><orient>horizontal</orient><x>11</x><y>8</y></obstacle>
-  <obstacle><type>permeable</type><orient>horizontal</orient><x>11</x><y>4</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>11</x><y>3</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>11</x><y>2</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>11</x><y>2</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>10</x><y>0</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>2</x><y>0</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>2</x><y>0</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>1</x><y>1</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>1</x><y>1</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>0</x><y>2</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>0</x><y>2</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>14</x><y>0</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>15</x><y>1</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>16</x><y>1</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>16</x><y>1</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>19</x><y>1</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>23</x><y>0</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>24</x><y>0</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>25</x><y>1</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>26</x><y>1</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>25</x><y>2</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>24</x><y>3</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>27</x><y>1</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>27</x><y>1</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>28</x><y>2</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>27</x><y>3</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>27</x><y>3</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>29</x><y>3</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>30</x><y>3</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>30</x><y>1</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>31</x><y>1</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>28</x><y>5</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>29</x><y>5</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>15</x><y>3</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>18</x><y>3</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>19</x><y>3</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>19</x><y>4</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>20</x><y>4</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>18</x><y>4</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>19</x><y>5</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>18</x><y>6</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>19</x><y>6</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>20</x><y>6</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>13</x><y>8</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>2</x><y>6</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>2</x><y>7</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>4</x><y>7</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>4</x><y>7</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>3</x><y>9</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>3</x><y>9</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>3</x><y>11</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>3</x><y>12</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>3</x><y>12</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>5</x><y>11</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>20</x><y>11</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>21</x><y>11</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>21</x><y>13</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>23</x><y>15</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>24</x><y>15</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>24</x><y>16</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>26</x><y>16</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>22</x><y>17</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>21</x><y>17</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>21</x><y>17</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>20</x><y>19</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>19</x><y>20</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>17</x><y>19</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>18</x><y>18</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>27</x><y>19</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>28</x><y>20</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>27</x><y>21</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>27</x><y>21</y></obstacle>
-  <obstacle><type>permeable</type><orient>horizontal</orient><x>26</x><y>20</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>25</x><y>21</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>26</x><y>21</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>26</x><y>24</y></obstacle>
-  <obstacle><type>permeable</type><orient>horizontal</orient><x>25</x><y>25</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>23</x><y>26</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>22</x><y>25</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>22</x><y>26</y></obstacle>
-  <obstacle><type>permeable</type><orient>horizontal</orient><x>21</x><y>30</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>22</x><y>30</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>24</x><y>30</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>23</x><y>31</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>20</x><y>31</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>20</x><y>32</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>21</x><y>34</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>23</x><y>34</y></obstacle>
-  <obstacle><type>permeable</type><orient>vertical</orient><x>24</x><y>31</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>25</x><y>34</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>26</x><y>34</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>27</x><y>33</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>26</x><y>33</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>26</x><y>32</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>27</x><y>30</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>28</x><y>33</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>29</x><y>32</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>28</x><y>33</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>28</x><y>34</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>29</x><y>34</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>30</x><y>34</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>31</x><y>33</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>30</x><y>31</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>31</x><y>29</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>31</x><y>27</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>31</x><y>26</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>30</x><y>25</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>29</x><y>25</y></obstacle>
-  <obstacle><type>permeable</type><orient>horizontal</orient><x>29</x><y>22</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>31</x><y>21</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>31</x><y>17</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>31</x><y>14</y></obstacle>
-  <obstacle><type>permeable</type><orient>horizontal</orient><x>30</x><y>15</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>26</x><y>8</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>27</x><y>8</y></obstacle>
-  <obstacle><type>wall</type><orient>horizontal</orient><x>25</x><y>10</y></obstacle>
-  <obstacle><type>wall</type><orient>vertical</orient><x>26</x><y>10</y></obstacle>
-  <obstacle><type>end</type><orient>horizontal</orient><x>27</x><y>34</y></obstacle>
-</maze>`
-        
-    processFile(sampleMaze);
-}
 
 function saveMaze()
 {
