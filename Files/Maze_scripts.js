@@ -1685,8 +1685,9 @@ function loadMaze()
         tempHTML = document.getElementById("action").innerHTML;
     }
     
-    document.getElementById("action").innerHTML = "Browse For File: <input type='file' accept='.maze' onchange='getFile(event)' id='files' name='files[]' style='margin-right: -60px;'/> <input type='submit' value='Cancel'  onclick='cancel_button()'/> <input type='submit' value='Load Sample Maze'  onclick='loadSample()' style='margin-left:45px;'/>"
-}
+    document.getElementById("action").innerHTML = "Browse For File: <input type='file' accept='.maze' onchange='getFile(event)' id='files' name='files[]'/> <input type='submit' value='Cancel'  onclick='cancel_button()'/> <input type='submit' value='Load Sample Maze'  onclick='loadSample()' style='margin-left:35px;'/>"
+	
+}	//style='margin-right: -60px;'
 
 function getFile(event)
 {
@@ -1726,8 +1727,8 @@ function processFile(contents)
     
 	var xml = parseXml(contents)
     
-	X_GRIDS = parseInt(xml.getElementsByTagName('X_GRIDS')[0].innerHTML);
-    Y_GRIDS = parseInt(xml.getElementsByTagName('Y_GRIDS')[0].innerHTML);
+	X_GRIDS = parseInt(xml.getElementsByTagName('X_GRIDS')[0].firstChild.nodeValue);
+    Y_GRIDS = parseInt(xml.getElementsByTagName('Y_GRIDS')[0].firstChild.nodeValue);
 
     //Each obstacle contains dictionaries:
     // { "type":  <obstacle type>
@@ -1743,10 +1744,10 @@ function processFile(contents)
 		//alert(tags[i].nodeName + ' = ' + tags[i].firstChild.nodeValue);		
 		newObstacle = {}
 		
-        newObstacle["type"]=XML_obstacles[i].getElementsByTagName("type")[0].innerHTML
-        newObstacle["orient"]=XML_obstacles[i].getElementsByTagName("orient")[0].innerHTML
-        newObstacle["x"]=parseInt(XML_obstacles[i].getElementsByTagName("x")[0].innerHTML)
-        newObstacle["y"]=parseInt(XML_obstacles[i].getElementsByTagName("y")[0].innerHTML)
+        newObstacle["type"]=XML_obstacles[i].getElementsByTagName("type")[0].firstChild.nodeValue
+        newObstacle["orient"]=XML_obstacles[i].getElementsByTagName("orient")[0].firstChild.nodeValue
+        newObstacle["x"]=parseInt(XML_obstacles[i].getElementsByTagName("x")[0].firstChild.nodeValue)
+        newObstacle["y"]=parseInt(XML_obstacles[i].getElementsByTagName("y")[0].firstChild.nodeValue)
 
         obstacles.push(newObstacle)
 	
