@@ -9,6 +9,7 @@ Global variable definitions
 
 cancel_button
 setPage
+setQueryVariable
 animate_string
 
 drawGrid
@@ -21,6 +22,7 @@ checkForObstacle
 findBegin
 isIn
 
+Arrow key handling function (anonymous)
 clickHandler
 startCustom
 
@@ -28,6 +30,7 @@ createMaze
 drawSetting
 eraseMaze
 changeGridSize
+displayEnds
 
 solveMaze
 stopMaze
@@ -44,15 +47,16 @@ moveForward
 turnBackward
 backTrack
 
+zoomPrompt
 zoomIn
 zoomOut
 speedUp
 slowDown
 
 loadMaze
+loadSample
 getFile
 processFile
-loadSample
 sampleFile
 saveMaze
 outputFile
@@ -72,6 +76,8 @@ var INTERVAL = 20;  //line spacing
 //size of canvas based on number of grids
 var X_GRIDS = 28;
 var Y_GRIDS = 25;
+
+var BORDER = 1; //1 px border around the maze, so the edges show completely.
 
 var CANVAS_WIDTH = INTERVAL * X_GRIDS;
 var CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
@@ -98,15 +104,15 @@ var obstacles = []; //contains a list of all obstacles.
 loadHTML = "<input type='submit' value='How to Play' onclick='openInstructions()' style='font-weight:bold;'/> <input type='submit' value='Load Sample'  style='font-weight:bold;' onclick='loadSample()' style='margin-left:20px;'/> <input type='submit' value='Create New Maze' onclick='createMaze()'> <input type='submit' value='Load from File' onclick='loadMaze()' />   "
                         
 //All of the different possible buttons for the action bar
-startingHTML = "Actions: <input type='submit' value='How to Play' onclick='openInstructions()' style='font-weight:bold;'/> <input type='submit' value='Solve Maze' style='font-weight:bold;' onclick='solveMaze()'/> <input type='submit' value='Add Obstacles' onclick='createMaze()'/> <input type='submit' value='Load Maze' onclick='loadMaze()'/>"
+startingHTML = "<input type='submit' value='Solve Maze' style='font-weight:bold;' onclick='solveMaze()'/> <input type='submit' value='Add Obstacles' onclick='createMaze()'/> <input type='submit' value='Load Maze' onclick='loadMaze()'/>"
 
-mazeSOLVER = "Starting location: <input type='submit' value='Beginning' style='font-weight:bold;' onclick='startMaze()'/> <input type='submit' value='Custom Spot' onclick='startCustom()'/> <input type='submit' value='Add Obstacles' onclick='createMaze()' style='margin-left: 20px;'/> "
+mazeSOLVER = "<input type='submit' value='Begin Maze' style='font-weight:bold;' onclick='startMaze()'/> <input type='submit' value='Identify Beginning/End' onmousedown='displayEnds()' onmouseup='drawGrid()' />"
 
 //<input type='submit' value='Return to Solver' onclick='solveMaze()'/> 
 
-createMAZE = "<input type='submit' value='Grid Size' onclick='changeGridSize()'/> <input type='submit' value='Erase All' onclick='eraseMaze()'/> <input type='submit' value='Save' onclick='saveMaze()'/> <input type='submit' value='SOLVE' onclick='solveMaze()' style='margin-right: 10px;'/>Draw: <input type='submit' value='Wall' onclick='drawSetting(\"wall\")'/> <input type='submit' value='Permeable' onclick='drawSetting(\"permeable\")'/> <input type='submit' value='Beginning' onclick='drawSetting(\"begin\")'/> <input type='submit' value='End' onclick='drawSetting(\"end\")'/>"
+createMAZE = "<input type='submit' value='Grid Size' onclick='changeGridSize()'/> <input type='submit' value='Erase All' onclick='eraseMaze()'/> <input type='submit' value='Save' onclick='saveMaze()'/> <!--<input type='submit' value='SOLVE' onclick='solveMaze()' style='margin-right: 10px;'/>-->Draw: <input type='submit' value='Wall' onclick='drawSetting(\"wall\")'/> <input type='submit' value='Permeable' onclick='drawSetting(\"permeable\")'/> <input type='submit' value='Beginning' onclick='drawSetting(\"begin\")'/> <input type='submit' value='End' onclick='drawSetting(\"end\")'/>"
 
-movingHTML = "Actions: <input type='submit' value='Stop the Maze' onclick='stopMaze()'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()'/>"
+movingHTML = "Actions: <input type='submit' value='Stop the Maze' onclick='stopMaze()'/> <input type='submit' value='Backtrack' onclick='backTrack()' style='margin-right:10px'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()'/>"
 
 pausedHTML = "<input type='submit' value='Resume Maze' onclick='resumeMaze()'/> <input type='submit' value='Backtrack' onclick='backTrack()' style='margin-right:10px'/> <input type='submit' value='Speed(+)' onclick='speedUp()'/> <input type='submit' value='Speed(-)' onclick='slowDown()' style='margin-right:10px'/> Go to:<input type='submit' value='Beginning' onclick='startMaze()'/> <input type='submit' value='Custom Spot' onclick='startCustom()'/>"
 
@@ -174,7 +180,31 @@ function setPage()
     animate_string('title');
     drawGrid();
     //loadSample();
+	
+	sample = getQueryVariable("sample");
+	if(sample!=null)
+	{
+		sampleFile(sample)
+	}
+	else
+	{
+		sampleFile(1);
+	}
 }
+
+
+function getQueryVariable(variable) {
+    var query = document.location.href;
+    var vars = query.split('&');
+    for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split('=');
+        if (decodeURIComponent(pair[0]) == variable) {
+            return decodeURIComponent(pair[1]);
+        }
+    }
+    console.log('Query variable %s not found', variable);
+}
+
 
 //animates the title
 function animate_string(id)   
@@ -207,14 +237,14 @@ function drawGrid()
     context.strokeStyle="#DDDDDD"; //gray color
     context.beginPath();
 
-    //vertical grid marks
-    for (var x=0; x<=canvas.width; x+=INTERVAL) {
+    //vertical grid marks  x=1 b/c 1 pixel buffer at edge.
+    for (var x=BORDER; x<=canvas.width; x+=INTERVAL) {
         context.moveTo(x, 0); 
         context.lineTo(x, canvas.height);
     }
 
-    //horizontal grid marks
-    for (var y=0; y<canvas.height; y+=INTERVAL) {
+    //horizontal grid marks  y=1 b/c 1 pixel buffer at edge.
+    for (var y=BORDER; y<canvas.height; y+=INTERVAL) {
         context.moveTo(0, y); 
         context.lineTo(canvas.width, y);
     }
@@ -234,13 +264,13 @@ function refreshRoute(canvas, context)
     context.beginPath();
     context.strokeStyle="#00FF00"; //green
 
-    context.moveTo( Math.round( route[0]["spot"][0]*INTERVAL + INTERVAL/2), 
-                    Math.round( route[0]["spot"][1]*INTERVAL + INTERVAL/2) ); 
+    context.moveTo( Math.round( route[0]["spot"][0]*INTERVAL + INTERVAL/2)+BORDER, 
+                    Math.round( route[0]["spot"][1]*INTERVAL + INTERVAL/2)+BORDER ); 
     
     for(var i=1; i<route.length; i++)
     {
-        context.lineTo(Math.round( route[i]["spot"][0]*INTERVAL + INTERVAL/2), 
-                       Math.round( route[i]["spot"][1]*INTERVAL + INTERVAL/2) );
+        context.lineTo(Math.round( route[i]["spot"][0]*INTERVAL + INTERVAL/2)+BORDER, 
+                       Math.round( route[i]["spot"][1]*INTERVAL + INTERVAL/2)+BORDER );
     }
 
     context.stroke();
@@ -248,10 +278,10 @@ function refreshRoute(canvas, context)
     context.beginPath(); //draw the LAST SEGMENT in a darker color.
     context.strokeStyle="#006600"; //DARK green
     
-    context.moveTo(Math.round( route[route.length - 1]["spot"][0]*INTERVAL + INTERVAL/2), 
-                   Math.round( route[route.length - 1]["spot"][1]*INTERVAL + INTERVAL/2) );
-    context.lineTo(Math.round( spot[0]*INTERVAL + INTERVAL/2), 
-                   Math.round( spot[1]*INTERVAL + INTERVAL/2) );
+    context.moveTo(Math.round( route[route.length - 1]["spot"][0]*INTERVAL + INTERVAL/2)+BORDER, 
+                   Math.round( route[route.length - 1]["spot"][1]*INTERVAL + INTERVAL/2)+BORDER );
+    context.lineTo(Math.round( spot[0]*INTERVAL + INTERVAL/2)+BORDER, 
+                   Math.round( spot[1]*INTERVAL + INTERVAL/2)+BORDER );
     
     context.stroke()
     
@@ -302,8 +332,8 @@ function refreshObstacles(canvas, context)
                     moveY = 0;
                 }
 
-                context.moveTo(x, y);  //Now move the line to the coordinate
-                context.lineTo(x + moveX, y + moveY);  //and draw the hash.
+                context.moveTo(x+BORDER, y+BORDER);  //Now move the line to the coordinate
+                context.lineTo(x + moveX+BORDER, y + moveY+BORDER);  //and draw the hash.
             }
         }
         context.stroke();
@@ -473,8 +503,8 @@ function drawObstacle(obstacle)
 
     context.beginPath();
     
-    context.moveTo(x, y);  //Move the line to the coordinate
-    context.lineTo(x + moveX, y + moveY);  //and draw the hash.
+    context.moveTo(x+BORDER, y+BORDER);  //Move the line to the coordinate
+    context.lineTo(x + moveX+BORDER, y + moveY+BORDER);  //and draw the hash.
 
     context.stroke();
 }
@@ -514,6 +544,19 @@ function findBegin()
     return -1;
 }
 
+function findEnds()
+{
+	var ends = [];
+    for (var i=0; i<obstacles.length; i++)
+    {
+        if(obstacles[i]["type"]=="end")
+        { ends.push(i); }
+    }
+    
+    return ends;
+}
+
+
 //adds compatibility for Edge Browser
 //(the .includes feature doesn't work, so I had to create my own.)
 function isIn(list, item)
@@ -534,14 +577,51 @@ function isIn(list, item)
 //============================================================
 
 
+
 //checks the ARROW KEYS to tell the computer what to do at a stop.
 //function checkKey(e) {
 document.onkeydown = function(e) {
     e = e || window.event;
-    
+
+	key = e.keyCode;
+    isShift = !!e.shiftKey; // typecast to boolean
+
+	//capture SHIFT/+ sign for zoom in
+    if ( isShift ) {
+		switch (key) {
+			case 16: // ignore shift key
+				break;
+			case 187: //Chrome/Safari/Opera/MSIE
+			case 61:  //Firefox
+				zoomIn();
+			default: //do nothing
+				break;
+		}
+	} else {
+		//capture (-) sign for zoom out (NO SHIFT)
+		switch(key)
+		{
+			case 189: //Chrome/Safari/Opera/MSIE
+			case 173: //Firefox
+				zoomOut();
+			default:
+				break;
+		}
+	}
+	
+	switch(key){
+		case 8:
+			backTrack();
+			break;
+		default:
+			break;
+	}
+	
+	//Now for other keys.
+	
     if(spot[3]=="startCustom")
     {
-        switch(e.keyCode)
+        switch(key)
         {
             case 37:
                 startCustom(-1,-1,"left")
@@ -560,7 +640,7 @@ document.onkeydown = function(e) {
     
     if(spot[3]!="drawing")
     {
-        if (e.keyCode == '38') {
+        if (key == '38') {
         // up arrow
             switch(turns["upkey"])
             {
@@ -578,7 +658,7 @@ document.onkeydown = function(e) {
                     break;
             }        
         }
-        else if (e.keyCode == '40') {
+        else if (key == '40') {
             // down arrow
             switch(turns["downkey"])
             {
@@ -596,7 +676,7 @@ document.onkeydown = function(e) {
                     break;
             }        
         }
-        else if (e.keyCode == '37') {
+        else if (key == '37') {
         // left arrow
             switch(turns["leftkey"])
             {
@@ -614,7 +694,7 @@ document.onkeydown = function(e) {
                     break;
             }           
         }
-        else if (e.keyCode == '39') {
+        else if (key == '39') {
         // right arrow
             switch(turns["rightkey"])
             {
@@ -767,7 +847,7 @@ function eraseMaze()
 function changeGridSize(horizontal, vertical)
 {
     if(horizontal==null)
-    {
+    {	//function calls itself recursively. First display prompt, then get value.
         tempHTML = document.getElementById("action").innerHTML
         document.getElementById("action").innerHTML = "(10 < x < 200) Horizontal Grids: <input type='text' id='horizontal' style='width:40px; margin-left: 5px; margin-right: 20px;'/> Vertical Grids: <input type='text' id='vertical' style='width:40px; margin-left: 5px;'/> <input type='submit' value='OK' onclick='changeGridSize( document.getElementById(\"horizontal\").value, document.getElementById(\"vertical\").value )'/>"
         
@@ -797,14 +877,74 @@ function changeGridSize(horizontal, vertical)
             X_GRIDS = Math.round(horizontal);
             Y_GRIDS = Math.round(vertical);
 
-            CANVAS_WIDTH = INTERVAL * X_GRIDS;
-            CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
+            CANVAS_WIDTH = INTERVAL * X_GRIDS + (BORDER*2);
+            CANVAS_HEIGHT = INTERVAL * Y_GRIDS + (BORDER*2);
             
             drawGrid();
             
+			horizontal=null;
+			vertical=null;
+			
             cancel_button()
         }   
     }
+}
+
+function displayEnds()
+{
+	var beginIndex = findBegin()
+	var endIndices = findEnds()
+	
+	//Get context
+	var canvas = document.getElementById('canvas');
+	var context = canvas.getContext('2d');
+	//var centerX = canvas.width / 2;
+	//var centerY = canvas.height / 2;
+	var radius = INTERVAL / 2 + 5;
+	
+	//Identify the beginning
+	var centerX = (obstacles[beginIndex]["x"] * INTERVAL) + INTERVAL / 2 + 1
+	var centerY = obstacles[beginIndex]["y"] * INTERVAL
+	
+		//obstacles[i]["x"] == spot[0] &&
+		//obstacles[i]["y"] == spot[1] &&
+		//obstacles[i]["orient"] == "vertical" &&
+             
+	context.beginPath();
+	context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+	//context.fillStyle = 'green';
+	//context.fill();
+	context.lineWidth = 3;
+	context.strokeStyle = '#FFA613';
+	context.stroke();
+	
+    for (var i=0; i<endIndices.length; i++)
+	{
+
+		if(obstacles[endIndices[i]]["orient"]=="horizontal")
+		{
+			var centerX = (obstacles[endIndices[i]]["x"] * INTERVAL) + INTERVAL / 2 + 1
+			var centerY = obstacles[endIndices[i]]["y"] * INTERVAL
+		}
+		else{
+			var centerX = obstacles[endIndices[i]]["x"] * INTERVAL + 1
+			var centerY = (obstacles[endIndices[i]]["y"] * INTERVAL) + INTERVAL / 2 + 1
+		}
+		
+		context.beginPath();
+		context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+		//context.fillStyle = 'green';
+		//context.fill();
+		context.lineWidth = 3;
+		context.strokeStyle = '#FFA613';
+		context.stroke();
+
+	}
+	
+	
+	
+	
+	
 }
 
 
@@ -886,11 +1026,19 @@ function move()
 
     //move the line on an interval
     var time_interval = setInterval(function() {
-        context.beginPath();   //First draw a line in GREEN
+
+		//Do this first. Otherwise, the backtrack function will not work properly.
+        if(spot[3] == "stopped")
+        {
+            clearInterval(time_interval);
+			return;
+        }
+
+		context.beginPath();   //First draw a line in GREEN
         context.strokeStyle="#007700"; //dark green
 
-        context.moveTo( Math.round(spot[0]*INTERVAL + INTERVAL/2), 
-                         Math.round(spot[1]*INTERVAL + INTERVAL/2) ); 
+        context.moveTo( Math.round(spot[0]*INTERVAL + INTERVAL/2)+BORDER, 
+                         Math.round(spot[1]*INTERVAL + INTERVAL/2)+BORDER ); 
 
         switch(spot[2])  //move the line in the right direction,
         {                //while keeping it in reference to the grids.
@@ -918,8 +1066,8 @@ function move()
 
         
         //draw the line, ALWAYS keeping it in reference to the grids.
-        context.lineTo( Math.round(spot[0]*INTERVAL + INTERVAL/2), 
-                        Math.round(spot[1]*INTERVAL + INTERVAL/2) );  
+        context.lineTo( Math.round(spot[0]*INTERVAL + INTERVAL/2)+BORDER, 
+                        Math.round(spot[1]*INTERVAL + INTERVAL/2)+BORDER );  
         context.stroke();
 
         //Decrease the distance to the next obstacle
@@ -967,10 +1115,6 @@ function move()
         context.stroke();
         */
 
-        if(spot[3] == "stopped")
-        {
-            clearInterval(time_interval);        
-        }
         
         //If you hit an obstacle, clear the interval
         //and handle each obstacle differently.
@@ -1617,6 +1761,18 @@ function backTrack()
 //==========================================================
 //These functions change background settings.
 
+
+function zoomPrompt()
+{
+    if (tempHTML == "")
+    {
+        tempHTML = document.getElementById("action").innerHTML;
+    }
+    
+    document.getElementById("action").innerHTML = "<input type='submit' value='Zoom In' onclick='zoomIn()'/> <input type='submit' value='Zoom Out' onclick='zoomOut()'/> <input type='submit' value='Done'  onclick='cancel_button()'/>&nbsp; You may also adjust with the + and - keys."
+
+}
+
 function zoomIn()
 {
     if(INTERVAL <= 35)  //limit to how much you can zoom in.
@@ -1667,9 +1823,21 @@ function loadMaze()
         tempHTML = document.getElementById("action").innerHTML;
     }
     
-    document.getElementById("action").innerHTML = "Browse For File: <input type='file' accept='.maze' onchange='getFile(event)' id='files' name='files[]'/> <input type='submit' value='Cancel'  onclick='cancel_button()'/> <input type='submit' value='Load Sample Maze'  onclick='loadSample()' style='margin-left:35px;'/>"
+    document.getElementById("action").innerHTML = "Browse For File: <input type='file' accept='.maze' onchange='getFile(event)' id='files' name='files[]'/> <input type='submit' value='Cancel'  onclick='cancel_button()'/>"
 	
 }	//style='margin-right: -60px;'
+
+
+function loadSample()
+{
+    if(tempHTML == "")
+    {
+        tempHTML = document.getElementById("action").innerHTML;
+    }
+    
+    document.getElementById('action').innerHTML = "<input type='submit' value='Sample 1 (Easy)' onclick='sampleFile(1)'/> <input type='submit' value='Sample 2 (Challenging)' onclick='sampleFile(2)' /> <input type='submit' value='Sample 3 (Challenging)' onclick='sampleFile(3)' /> <input type='submit' value='Cancel'  onclick='cancel_button()' style='font-weight:bold;'/> <input type='submit' value='Load from File' style='margin-left:25px;' onclick='loadMaze()' />"
+}
+
 
 function getFile(event)
 {
@@ -1702,7 +1870,8 @@ function processFile(contents)
 	    
 	X_GRIDS = parseInt(xml.getElementsByTagName('X_GRIDS')[0].firstChild.nodeValue);
     Y_GRIDS = parseInt(xml.getElementsByTagName('Y_GRIDS')[0].firstChild.nodeValue);
-
+	DefaultSpacing = parseInt(xml.getElementsByTagName('DefaultSpacing')[0].firstChild.nodeValue);
+	
     //Each obstacle contains dictionaries:
     // { "type":  <obstacle type>
     //   "orient": <obstacle orientation>
@@ -1725,23 +1894,14 @@ function processFile(contents)
         obstacles.push(newObstacle)
 	
 	}
-	
-    CANVAS_WIDTH = INTERVAL * X_GRIDS;
-    CANVAS_HEIGHT = INTERVAL * Y_GRIDS;
-    drawGrid()
+
+    INTERVAL = DefaultSpacing
+    CANVAS_WIDTH = INTERVAL * X_GRIDS + (BORDER*2);
+    CANVAS_HEIGHT = INTERVAL * Y_GRIDS + (BORDER*2);
+	drawGrid()
 
 }
 
-
-function loadSample()
-{
-    if(tempHTML == "")
-    {
-        tempHTML = document.getElementById("action").innerHTML;
-    }
-    
-    document.getElementById('action').innerHTML = "<input type='submit' value='Sample 1 (Easy)' onclick='sampleFile(1, 20)'/> <input type='submit' value='Sample 2 (Challenging)' onclick='sampleFile(2, 15)' />  <input type='submit' value='Cancel'  onclick='cancel_button()'/>"
-}
 
 function sampleFile(sampleNum, customInterval)
 {
@@ -1790,7 +1950,8 @@ function outputFile()
     textString += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
 	textString += "<maze>\r\n"
 	textString += "  <size><X_GRIDS>" + X_GRIDS + "</X_GRIDS>"
-	textString += "<Y_GRIDS>" + Y_GRIDS + "</Y_GRIDS></size>"
+	textString += "<Y_GRIDS>" + Y_GRIDS + "</Y_GRIDS>"
+	textString += "<DefaultSpacing>" + INTERVAL + "</DefaultSpacing></size>"
 	
     for(var i = 0; i<obstacles.length; i++)
     {
@@ -1816,16 +1977,62 @@ function outputFile()
 
 //================================================================
 //================================================================
-//These functions handle the Instructions window.
+//These functions handle opening new windows.
 
+function solutions(sampleNum)
+{	//opens itself recursively. 
+	//First displays the menu, then opens the window.
+	if(sampleNum==null)
+	{
+		if (tempHTML == "")
+		{
+			tempHTML = document.getElementById("action").innerHTML;
+		}
+		
+		document.getElementById("action").innerHTML = "<input type='submit' value='Sample 1' onclick='solutions(1)'/> <input type='submit' value='Sample 2' onclick='solutions(2)'/> <input type='submit' value='Sample 3' onclick='solutions(3)'/>&nbsp;&nbsp;Opens as a popup.&nbsp;<input type='submit' value='Cancel'  onclick='cancel_button()'/>"
+	}	
+	else
+	{
+		var newImg = new Image();
+
+		newImg.onload = function() {
+			var height = newImg.height;
+			var width = newImg.width;
+			//alert ('The image size is '+width+'*'+height);
+			openImage( newImg.src,width,height );
+			
+		}
+		
+		var imgSrc = "Files/Solution" + sampleNum.toString() + ".png"
+		newImg.src = imgSrc; // this must be done AFTER setting onload
+		
+		//viewwin = window.open("Files/Solution" + sampleNum.toString() + ".png",'Solution to Sample ' + sampleNum.toString(),"width="+width+", height="+height );
+
+		
+		cancel_button();
+
+	}
+}
+
+//Open the super secret solution.
+function openImage(source, width, height)
+{
+//	viewwin = window.open(source,"Solution","width="+width*.67+", height="+height*.67 );
+//	viewwin = window.open(source,"Solution","width="+width*1.5+", height="+height*1.5 );
+	viewwin = window.open(source,"Solution","width="+width+", height="+height );
+
+}
+
+//opens instructions in new tab.
 function openInstructions()
 {
     var winTop = (screen.height / 2) - (3 * screen.height / 7);
     var winLeft = (screen.width / 2) - (3 * screen.width / 7);
-    var windowFeatures = "width=770,height=570,scrollbars=yes,";
-    windowFeatures = windowFeatures + "left=" + winLeft + ",";
+    //var windowFeatures = "width=770,height=570,scrollbars=yes,";
+    var windowFeatures = "";
+	windowFeatures = windowFeatures + "left=" + winLeft + ",";
     windowFeatures = windowFeatures + "top=" + winTop;
-    newWindow = window.open("Instructions.html", "Instructions", windowFeatures);
+    newWindow = window.open("instructions.html", "_blank"); //, windowFeatures);
 }
 
 
